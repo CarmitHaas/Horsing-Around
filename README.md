@@ -26,7 +26,7 @@ Horsing Around is a web application designed to help volunteers in a horse farm 
 
 1. Clone this repository:
    ```
-   git clone https://github.com/yourusername/horsing-around.git
+   git clone https://github.com/CarmitHaas/Horsing-Around.git
    cd horsing-around
    ```
 
@@ -35,7 +35,13 @@ Horsing Around is a web application designed to help volunteers in a horse farm 
    docker-compose up --build
    ```
 
-3. Access the application in your web browser at `http://localhost:5000`
+3. Access the application in your web browser at `http://localhost`
+
+
+4. The initial setup will load sample data to your database. As admin you can edit that as you like.
+   If you wish to start with an empty database you can comment out the data volume and the db initialization command in the docker compose like so:
+    # - ./data:/data
+    # command: bash -c "mongod --bind_ip_all & sleep 10 && /data/init-mongo.sh && wait"
 
 ## Usage
 
