@@ -1,0 +1,4 @@
+{"_id":{"$oid":"66c12bf12250781930634ee1"},"name":"Brush with soft brush","category":"day_opening"}
+{"_id":{"$oid":"66c12c0b2250781930634ee2"},"name":"Brush with rough brush","category":"day_opening"}
+{"_id":{"$oid":"66c12c212250781930634ee3"},"name":"Bring horse to instructor","category":"pre_lesson"}
+{"_id":{"$oid":"66c12c3b2250781930634ee4"},"name":"Tidy up","category":"end_of_day"}

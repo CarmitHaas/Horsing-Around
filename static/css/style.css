@@ -1,0 +1,38 @@
+body {
+    background-color: #f0f0f0;
+}
+
+.horse-card {
+    transition: all 0.3s ease;
+}
+
+.horse-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.chore-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+
+.category-day_opening {
+    background-color: #e6f3ff;
+}
+
+.category-pre_lesson {
+    background-color: #e6ffe6;
+}
+
+.category-post_lesson {
+    background-color: #fff0e6;
+}
+
+.category-end_of_day {
+    background-color: #ffe6e6;
+}

@@ -1,0 +1,46 @@
+version: '3'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/
+    depends_on:
+      - mongo
+    networks:
+      - db-network
+      - frontend-network
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./data:/data
+    command: bash -c "mongod --bind_ip_all & sleep 10 && /data/init-mongo.sh && wait"
+    networks:
+      - db-network
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    depends_on:
+      - web
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./static:/static
+    networks:
+      - frontend-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  db-network:
+    driver: bridge
+  frontend-network:
+    driver: bridge
