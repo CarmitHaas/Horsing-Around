@@ -152,13 +152,38 @@ def delete_chore():
     chores_collection.delete_one({'_id': ObjectId(chore_id)})
     return jsonify({'success': True})
 
+@app.route('/get_horse/<horse_id>')
+@login_required
+def get_horse(horse_id):
+    horse = horses_collection.find_one({'_id': ObjectId(horse_id)})
+    return jsonify(horse)
+
 @app.route('/edit_horse', methods=['POST'])
 @login_required
 def edit_horse():
-    horse_id = request.json['horse_id']
-    updated_data = request.json['updated_data']
+    horse_id = request.json.get('horse_id')
+    updated_data = request.json.get('updated_data')
+    if not horse_id or not updated_data:
+        return jsonify({'success': False, 'message': 'Missing horse_id or updated_data'}), 400
+
     horses_collection.update_one({'_id': ObjectId(horse_id)}, {'$set': updated_data})
     return jsonify({'success': True})
+
+@app.route('/get_logs')
+@login_required
+def get_logs():
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    query = {}
+    if start_date and end_date:
+        query['timestamp'] = {
+            '$gte': datetime.strptime(start_date, '%Y-%m-%d'),
+            '$lte': datetime.strptime(end_date, '%Y-%m-%d')
+        }
+    
+    logs = list(logs_collection.find(query).sort('timestamp', -1))
+    return jsonify(logs)
 
 @app.route('/static/<path:filename>')
 def serve_static(filename):
