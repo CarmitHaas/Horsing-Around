@@ -1,4 +1,5 @@
 version: "3"
+
 services:
   web:
     build: .
@@ -11,6 +12,7 @@ services:
     networks:
       - db-network
       - frontend-network
+
   mongo:
     image: mongo:latest
     ports:
@@ -21,6 +23,7 @@ services:
     # command: bash -c "mongod --bind_ip_all & sleep 10 && /data/init-mongo.sh && wait"
     networks:
       - db-network
+
   nginx:
     image: nginx:latest
     ports:
@@ -32,8 +35,10 @@ services:
       - ./static:/static
     networks:
       - frontend-network
+
 volumes:
   mongodb_data:
+
 networks:
   db-network:
     driver: bridge
