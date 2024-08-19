@@ -183,6 +183,36 @@
         </div>
     </div>
 
+        <!-- Edit Horse Modal -->
+    <div class="modal fade" id="edit-horse-modal" tabindex="-1" aria-labelledby="edit-horse-modal-label" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="edit-horse-modal-label">Edit Horse</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="edit-horse-form">
+                        <input type="hidden" id="edit-horse-id">
+                        <div class="mb-3">
+                            <label for="edit-horse-name" class="form-label">Horse Name</label>
+                            <input type="text" class="form-control" id="edit-horse-name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-horse-image" class="form-label">Image URL</label>
+                            <input type="url" class="form-control" id="edit-horse-image" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-horse-info" class="form-label">Horse Info</label>
+                            <textarea class="form-control" id="edit-horse-info" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- View Logs Modal -->
     <div class="modal fade" id="view-logs-modal" tabindex="-1" aria-labelledby="view-logs-modal-label" aria-hidden="true">
         <div class="modal-dialog modal-lg">
