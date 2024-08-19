@@ -59,23 +59,75 @@ $(document).ready(function () {
   $("#add-chore-form").on("submit", function (e) {
     e.preventDefault();
     var choreData = {
-      name: $("#chore-name").val(),
-      category: $("#chore-category").val(),
+        name: $("#chore-name").val(),
+        category: $("#chore-category").val(),
+        assign_all: $("#assign-all-horses").is(":checked"),
+        horse_ids: []
     };
 
-    $.ajax({
-      url: "/add_chore",
-      method: "POST",
-      contentType: "application/json",
-      data: JSON.stringify(choreData),
-      success: function (response) {
-        if (response.success) {
-          location.reload();
-        }
-      },
-    });
-  });
+    if (!choreData.assign_all) {
+        $(".horse-checkbox:checked").each(function() {
+            choreData.horse_ids.push($(this).val());
+        });
+    }
 
+    $.ajax({
+        url: "/add_chore",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify(choreData),
+        success: function (response) {
+            if (response.success) {
+                console.log("Chore added successfully:", response.chore);
+                // Add the new chore to the UI for each selected horse (or all horses if assign_all is true)
+                if (choreData.assign_all) {
+                    $(".chore-list").each(function() {
+                        addChoreToUI($(this), response.chore);
+                    });
+                } else {
+                    choreData.horse_ids.forEach(function(horseId) {
+                        addChoreToUI($(`#horse-${horseId} .chore-list`), response.chore);
+                    });
+                }
+                $("#add-chore-modal").modal("hide");
+            }
+        },
+    });
+});
+
+function addChoreToUI(choreList, chore) {
+    var categoryDiv = choreList.find(`.category-${chore.category}`);
+    if (categoryDiv.length === 0) {
+        categoryDiv = $(`<div class="mt-3 category category-${chore.category}">
+                            <h6>${chore.category.replace('_', ' ').title()}</h6>
+                         </div>`);
+        choreList.append(categoryDiv);
+    }
+    
+    var choreHtml = `
+        <div class="form-check d-flex justify-content-between align-items-center">
+            <div>
+                <input type="checkbox" class="form-check-input chore-checkbox"
+                    id="chore-${chore._id}" data-horse-id="${choreList.closest('.card').data('horse-id')}"
+                    data-chore-id="${chore._id}">
+                <label class="form-check-label" for="chore-${chore._id}">
+                    ${chore.name}
+                </label>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-primary edit-chore"
+                    data-horse-id="${choreList.closest('.card').data('horse-id')}" data-chore-id="${chore._id}">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger delete-chore"
+                    data-horse-id="${choreList.closest('.card').data('horse-id')}" data-chore-id="${chore._id}">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    categoryDiv.append(choreHtml);
+}
   $('.edit-horse').click(function () {
     const horseId = $(this).data('horse-id');
     // Fetch horse data and populate the form
@@ -109,6 +161,21 @@ $(document).ready(function () {
       }
     });
   });
+
+  $(document).on('click', '.edit-horse', function() {
+    const horseId = $(this).data('horse-id');
+    
+    // Assuming you have a function to get horse details by ID
+    $.get(`/get_horse/${horseId}`, function(data) {
+        $('#edit-horse-id').val(data.id);
+        $('#edit-horse-name').val(data.name);
+        $('#edit-horse-image').val(data.image);
+        $('#edit-horse-info').val(data.info);
+        
+        $('#edit-horse-modal').modal('show');
+    });
+});
+
 
   $(".delete-horse").on("click", function (event) {
     event.preventDefault();
@@ -151,25 +218,25 @@ $(".remove-chore").on("click", function () {
   }
 });
 
-$("#add-chore-form").on("submit", function (e) {
-  e.preventDefault();
-  var choreData = {
-    name: $("#chore-name").val(),
-    category: $("#chore-category").val(),
-  };
+// $("#add-chore-form").on("submit", function (e) {
+//   e.preventDefault();
+//   var choreData = {
+//     name: $("#chore-name").val(),
+//     category: $("#chore-category").val(),
+//   };
 
-  $.ajax({
-    url: "/add_chore",
-    method: "POST",
-    contentType: "application/json",
-    data: JSON.stringify(choreData),
-    success: function (response) {
-      if (response.success) {
-        location.reload();
-      }
-    },
-  });
-});
+//   $.ajax({
+//     url: "/add_chore",
+//     method: "POST",
+//     contentType: "application/json",
+//     data: JSON.stringify(choreData),
+//     success: function (response) {
+//       if (response.success) {
+//         location.reload();
+//       }
+//     },
+//   });
+// });
 
 // Delete chore
 $(".delete-chore").click(function () {

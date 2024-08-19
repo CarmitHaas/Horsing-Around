@@ -104,8 +104,12 @@ def logout():
 @app.route('/index')
 def index():
     horses = list(horses_collection.find())
-    chores = list(chores_collection.find())
-    return render_template('index.html', horses=horses, chores=chores, is_admin=current_user.is_authenticated)
+    for horse in horses:
+        horse['_id'] = str(horse['_id'])
+        if 'chores' in horse:
+            for chore in horse['chores']:
+                chore['_id'] = str(chore['_id'])
+    return render_template('index.html', horses=horses)
 
 @app.route('/add_horse', methods=['POST'])
 @login_required
@@ -118,10 +122,59 @@ def add_horse():
 @login_required
 def add_chore():
     chore_data = request.json
-    horse_id = chore_data.pop('horse_id')
-    chore_data['_id'] = ObjectId()
-    chores_collection.insert_one(chore_data)  
-    return jsonify({'success': True, 'id': str(chore_data['_id'])})
+    assign_all = chore_data.pop('assign_all', False)
+    horse_ids = chore_data.pop('horse_ids', [])
+    chore_id = ObjectId()
+    chore_data['_id'] = chore_id
+    
+    # Insert the chore into the chores collection
+    chores_collection.insert_one(chore_data)
+    
+    # Prepare the chore data for insertion into horses
+    horse_chore_data = chore_data.copy()
+    horse_chore_data['completed'] = False
+    
+    if assign_all:
+        # Assign to all horses
+        horses_collection.update_many(
+            {},
+            {'$push': {'chores': horse_chore_data}}
+        )
+    else:
+        # Assign to selected horses
+        horses_collection.update_many(
+            {'_id': {'$in': [ObjectId(horse_id) for horse_id in horse_ids]}},
+            {'$push': {'chores': horse_chore_data}}
+        )
+    
+    return jsonify({'success': True, 'id': str(chore_id), 'chore': convert_objectid(horse_chore_data)})
+
+# @app.route('/add_chore', methods=['POST'])
+# @login_required
+# def add_chore():
+#     chore_data = request.json
+#     assign_all = chore_data.pop('assign_all', False)
+#     horse_ids = chore_data.pop('horse_ids', [])
+#     chore_id = ObjectId()
+#     chore_data['_id'] = chore_id
+    
+#     # Insert the chore into the chores collection
+#     chores_collection.insert_one(chore_data)
+    
+#     if assign_all:
+#         # Assign to all horses
+#         horses_collection.update_many(
+#             {},
+#             {'$push': {'chores': chore_data}}
+#         )
+#     else:
+#         # Assign to selected horses
+#         horses_collection.update_many(
+#             {'_id': {'$in': [ObjectId(horse_id) for horse_id in horse_ids]}},
+#             {'$push': {'chores': chore_data}}
+#         )
+    
+#     return jsonify({'success': True, 'id': str(chore_id)})
 
 @app.route('/remove_chore', methods=['POST'])
 @login_required
