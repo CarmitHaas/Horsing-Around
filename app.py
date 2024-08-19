@@ -101,10 +101,7 @@ def add_chore():
     chore_data = request.json
     horse_id = chore_data.pop('horse_id')
     chore_data['_id'] = ObjectId()
-    horses_collection.update_one(
-        {'_id': ObjectId(horse_id)},
-        {'$push': {'chores': chore_data}}
-    )
+    chores_collection.insert_one(chore_data)  
     return jsonify({'success': True, 'id': str(chore_data['_id'])})
 
 @app.route('/remove_chore', methods=['POST'])
@@ -127,6 +124,17 @@ def update_chore():
         {'_id': ObjectId(horse_id), 'chores._id': ObjectId(chore_id)},
         {'$set': {'chores.$.completed': completed}}
     )
+    
+    # Add log entry
+    log_entry = {
+        'horse_id': horse_id,
+        'chore_id': chore_id,
+        'completed': completed,
+        'timestamp': datetime.now()
+    }
+    logs_collection.insert_one(log_entry)
+    
+    return jsonify({'success': True})
     
     # Add log entry
     log_entry = {
