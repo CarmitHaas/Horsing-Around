@@ -40,8 +40,8 @@ Horsing Around is a web application designed to help volunteers in a horse farm 
 
 4. The initial setup will load sample data to your database. As admin you can edit that as you like.
    If you wish to start with an empty database you can comment out the data volume and the db initialization command in the docker compose like so:
-    # - ./data:/data
-    # command: bash -c "mongod --bind_ip_all & sleep 10 && /data/init-mongo.sh && wait"
+     - ./data:/data
+     command: bash -c "mongod --bind_ip_all & sleep 10 && /data/init-mongo.sh && wait"
 
 ## Usage
 
