@@ -152,6 +152,14 @@ def delete_chore():
     chores_collection.delete_one({'_id': ObjectId(chore_id)})
     return jsonify({'success': True})
 
+@app.route('/edit_horse', methods=['POST'])
+@login_required
+def edit_horse():
+    horse_id = request.json['horse_id']
+    updated_data = request.json['updated_data']
+    horses_collection.update_one({'_id': ObjectId(horse_id)}, {'$set': updated_data})
+    return jsonify({'success': True})
+
 @app.route('/static/<path:filename>')
 def serve_static(filename):
     return send_from_directory('static', filename)
