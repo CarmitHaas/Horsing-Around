@@ -76,6 +76,40 @@ $(document).ready(function () {
     });
   });
 
+  $('.edit-horse').click(function() {
+    const horseId = $(this).data('horse-id');
+    // Fetch horse data and populate the form
+    $.get(`/get_horse/${horseId}`, function(data) {
+        $('#edit-horse-id').val(data._id);
+        $('#edit-horse-name').val(data.name);
+        $('#edit-horse-image').val(data.image);
+        $('#edit-horse-info').val(data.info);
+        $('#edit-horse-modal').modal('show');
+    });
+});
+
+// Handle edit horse
+$('#edit-horse-form').submit(function(e) {
+    e.preventDefault();
+    const horseId = $('#edit-horse-id').val();
+    const horseData = {
+        name: $('#edit-horse-name').val(),
+        image: $('#edit-horse-image').val(),
+        info: $('#edit-horse-info').val()
+    };
+    $.ajax({
+        url: `/edit_horse/${horseId}`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(horseData),
+        success: function(response) {
+            if (response.success) {
+                location.reload();
+            }
+        }
+    });
+});
+
   // Handle remove horse
   $(".remove-horse").on("click", function () {
     var horseId = $(this).data("horse-id");
@@ -151,6 +185,37 @@ $(document).ready(function () {
     }
   });
 
+  // View logs
+  $('#view-logs').click(function() {
+      $('#view-logs-modal').modal('show');
+      loadLogs();
+  });
+
+  $('#log-date-range').daterangepicker({
+      opens: 'left'
+  }, function(start, end, label) {
+      loadLogs(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
+  });
+
+  function loadLogs(startDate, endDate) {
+      let url = '/get_logs';
+      if (startDate && endDate) {
+          url += `?start_date=${startDate}&end_date=${endDate}`;
+      }
+      $.get(url, function(data) {
+          const logsContainer = $('#logs-container');
+          logsContainer.empty();
+          data.forEach(log => {
+              logsContainer.append(`
+                  <div class="log-entry">
+                      <p class="mb-1"><strong>${log.horse_name}</strong>: ${log.chore_name}</p>
+                      <p class="mb-0 log-timestamp">${new Date(log.timestamp).toLocaleString()}</p>
+                  </div>
+              `);
+          });
+      });
+  }
+  
   // Handle change password form submission
   $("#change-password-form").on("submit", function (e) {
     e.preventDefault();
