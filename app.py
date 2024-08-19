@@ -106,7 +106,7 @@ def update_chore():
     chore_id = request.json['chore_id']
     horse_id = request.json['horse_id']
     completed = request.json['completed']
-    
+
     horses_collection.update_one(
         {'_id': ObjectId(horse_id)},
         {'$set': {f'chores.{chore_id}': completed}}
