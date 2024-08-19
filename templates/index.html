@@ -57,10 +57,13 @@
                                 <i class="bi bi-three-dots-vertical"></i>
                             </button>
                             <ul class="dropdown-menu" aria-labelledby="horseOptionsDropdown{{ horse._id }}">
-                                <li><a class="dropdown-item edit-horse" href="#"
-                                        data-horse-id="{{ horse._id }}">Edit</a></li>
-                                <li><a class="dropdown-item delete-horse" href="#"
-                                        data-horse-id="{{ horse._id }}">Delete</a></li>
+                                <li><a class="dropdown-item edit-horse" href="#" data-bs-toggle="modal"
+                                        data-bs-target="#edit-horse-modal" data-horse-id="{{ horse._id }}">Edit</a></li>
+                                <li>
+                                    <a class="dropdown-item delete-horse" href="#"
+                                        data-horse-id="{{ horse._id }}">Delete</a>
+                                </li>
+
                             </ul>
                         </div>
                     </div>

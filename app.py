@@ -143,12 +143,22 @@ def update_chore():
     
     return jsonify({'success': True})
 
+
 @app.route('/remove_horse', methods=['POST'])
 @login_required
 def remove_horse():
-    horse_id = request.json['horse_id']
-    horses_collection.delete_one({'_id': ObjectId(horse_id)})
-    return jsonify({'success': True})
+    data = request.get_json()
+    horse_id = data.get('horse_id')
+    
+    if not horse_id:
+        return jsonify({'success': False, 'message': 'Horse ID not provided'}), 400
+    
+    result = db.horses.delete_one({'_id': ObjectId(horse_id)})
+    
+    if result.deleted_count == 1:
+        return jsonify({'success': True, 'message': 'Horse deleted successfully'}), 200
+    else:
+        return jsonify({'success': False, 'message': 'Horse not found'}), 404
 
 @app.route('/change_password', methods=['POST'])
 @login_required
@@ -188,7 +198,7 @@ def edit_horse(horse_id):
     horses_collection.update_one({'_id': ObjectId(horse_id)}, {'$set': horse_data})
     return jsonify({'success': True})
 
-@app.route('/get_logs')
+@app.route('/get_logs', methods=['GET'])
 @login_required
 def get_logs():
     start_date = request.args.get('start_date')

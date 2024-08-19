@@ -17,8 +17,8 @@ services:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
-      - ./data:/data
-    command: bash -c "mongod --bind_ip_all & sleep 10 && /data/init-mongo.sh && wait"
+    #   - ./data:/data
+    # command: bash -c "mongod --bind_ip_all & sleep 10 && /data/init-mongo.sh && wait"
     networks:
       - db-network
   nginx:
