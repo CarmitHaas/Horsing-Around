@@ -5,11 +5,28 @@ body {
 
 .horse-card {
     transition: all 0.3s ease;
+    position: relative;
 }
 
 .horse-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.horse-options {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+}
+
+.horse-options .dropdown-toggle::after {
+    display: none;
+}
+
+.horse-options .btn-link {
+    color: #fff;
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
 }
 
 .chore-list {
@@ -20,6 +37,12 @@ body {
 .card-img-top {
     height: 200px;
     object-fit: cover;
+}
+
+.category {
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
 }
 
 .category-day_opening {
@@ -38,6 +61,39 @@ body {
     background-color: #ffe6e6;
 }
 
+.form-check {
+    padding: 5px 0;
+}
+
+.edit-chore,
+.delete-chore {
+    padding: 0.1rem 0.3rem;
+    font-size: 0.75rem;
+}
+
+#view-logs-modal .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+#log-date-range {
+    font-size: 0.9rem;
+}
+
+.log-entry {
+    border-bottom: 1px solid #dee2e6;
+    padding: 10px 0;
+}
+
+.log-entry:last-child {
+    border-bottom: none;
+}
+
+.log-timestamp {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
 .bg-horse-stable {
     background-image: url("/static/images/horse-in-stable.jpg");
     background-position: top;
@@ -50,9 +106,4 @@ body {
     padding: 20px 40px;
     border-radius: 15px;
     box-shadow: 2px 4px 8px rgba(0, 0, 0, 0.3);
-}
-
-.category {
-    padding-block: 5px;
-    padding-inline: 10px;
 }
