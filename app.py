@@ -60,18 +60,6 @@ scheduler = BackgroundScheduler()
 scheduler.add_job(func=reset_checkboxes, trigger="cron", hour=0)
 scheduler.start()
 
-def convert_objectid(data):
-    if isinstance(data, list):
-        for item in data:
-            convert_objectid(item)
-    elif isinstance(data, dict):
-        for key, value in data.items():
-            if isinstance(value, ObjectId):
-                data[key] = str(value)
-            elif isinstance(value, (list, dict)):
-                convert_objectid(value)
-    return data
-
 @app.route('/')
 def welcome():
     return render_template('welcome.html')
@@ -208,62 +196,6 @@ def update_chore():
     
     return jsonify({'success': True})
 
-# @app.route('/add_chore', methods=['POST'])
-# @login_required
-# def add_chore():
-#     chore_data = request.json
-#     horse_id = chore_data.pop('horse_id', None)
-    
-#     # Insert the chore into the chores collection
-#     result = chores_collection.insert_one(chore_data)
-#     chore_id = result.inserted_id
-    
-#     # If a horse_id is provided, associate the chore with the horse
-#     if horse_id:
-#         horses_collection.update_one(
-#             {'_id': ObjectId(horse_id)},
-#             {'$push': {'chores': str(chore_id)}}
-#         )
-    
-#     return jsonify({'success': True, 'id': str(chore_id)})
-
-# @app.route('/update_chore', methods=['POST'])
-# def update_chore():
-#     chore_id = request.json['chore_id']
-#     completed = request.json['completed']
-    
-#     # Update the chore in the chores collection
-#     chores_collection.update_one(
-#         {'_id': ObjectId(chore_id)},
-#         {'$set': {'completed': completed}}
-#     )
-    
-#     #  # Add log entry
-#     # log_entry = {
-#     #    # 'horse_id': horse_id,
-#     #     'chore_id': chore_id,
-#     #     'completed': completed,
-#     #     'timestamp': datetime.now()
-#     # }
-#     # logs_collection.insert_one(log_entry)
-    
-#     return jsonify({'success': True})
-
-# @app.route('/remove_chore', methods=['POST'])
-# @login_required
-# def remove_chore():
-#     chore_id = request.json['chore_id']
-    
-#     # Remove the chore from the chores collection
-#     chores_collection.delete_one({'_id': ObjectId(chore_id)})
-    
-#     # Remove the chore reference from all horses
-#     horses_collection.update_many(
-#         {},
-#         {'$pull': {'chores': str(chore_id)}}
-#     )
-    
-#     return jsonify({'success': True})
 
 @app.route('/remove_horse', methods=['POST'])
 @login_required
@@ -306,22 +238,17 @@ def delete_chore():
     chores_collection.delete_one({'_id': ObjectId(chore_id)})
     return jsonify({'success': True})
 
-@app.route('/get_horse/<horse_id>', methods=['GET'])
+@app.route('/get_horse/<horse_id>')
 @login_required
 def get_horse(horse_id):
     horse = horses_collection.find_one({'_id': ObjectId(horse_id)})
-    if horse:
-        horse = convert_objectid(horse)
     return jsonify(horse)
-
 
 @app.route('/edit_horse/<horse_id>', methods=['POST'])
 @login_required
 def edit_horse(horse_id):
     horse_data = request.json
     horses_collection.update_one({'_id': ObjectId(horse_id)}, {'$set': horse_data})
-    if horse_data:
-        horse_data = convert_objectid(horse_data)
     return jsonify({'success': True})
 
 @app.route('/get_logs', methods=['GET'])
@@ -352,4 +279,3 @@ if __name__ == '__main__':
             'password': generate_password_hash('admin')
         })
     app.run(host='0.0.0.0', debug=True)
-    
