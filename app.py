@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, send_from_directory
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from pymongo import MongoClient
 from bson import ObjectId
@@ -31,6 +31,7 @@ db = client['horsing_around']
 horses_collection = db['horses']
 chores_collection = db['chores']
 users_collection = db['users']
+logs_collection = db['logs']
 
 # Flask-Login setup
 login_manager = LoginManager()
@@ -52,7 +53,7 @@ def load_user(username):
     return User(username=user['username'])
 
 def reset_checkboxes():
-    horses_collection.update_many({}, {'$set': {'chores': {}}})
+    horses_collection.update_many({}, {'$set': {'chores.$[].completed': False}})
 
 # Scheduler to reset checkboxes at midnight
 scheduler = BackgroundScheduler()
@@ -98,19 +99,44 @@ def add_horse():
 @login_required
 def add_chore():
     chore_data = request.json
-    result = chores_collection.insert_one(chore_data)
-    return jsonify({'success': True, 'id': str(result.inserted_id)})
+    horse_id = chore_data.pop('horse_id')
+    chore_data['_id'] = ObjectId()
+    horses_collection.update_one(
+        {'_id': ObjectId(horse_id)},
+        {'$push': {'chores': chore_data}}
+    )
+    return jsonify({'success': True, 'id': str(chore_data['_id'])})
+
+@app.route('/remove_chore', methods=['POST'])
+@login_required
+def remove_chore():
+    horse_id = request.json['horse_id']
+    chore_id = request.json['chore_id']
+    horses_collection.update_one(
+        {'_id': ObjectId(horse_id)},
+        {'$pull': {'chores': {'_id': ObjectId(chore_id)}}}
+    )
+    return jsonify({'success': True})
 
 @app.route('/update_chore', methods=['POST'])
 def update_chore():
-    chore_id = request.json['chore_id']
     horse_id = request.json['horse_id']
+    chore_id = request.json['chore_id']
     completed = request.json['completed']
-
     horses_collection.update_one(
-        {'_id': ObjectId(horse_id)},
-        {'$set': {f'chores.{chore_id}': completed}}
+        {'_id': ObjectId(horse_id), 'chores._id': ObjectId(chore_id)},
+        {'$set': {'chores.$.completed': completed}}
     )
+    
+    # Add log entry
+    log_entry = {
+        'horse_id': horse_id,
+        'chore_id': chore_id,
+        'completed': completed,
+        'timestamp': datetime.now()
+    }
+    logs_collection.insert_one(log_entry)
+    
     return jsonify({'success': True})
 
 @app.route('/remove_horse', methods=['POST'])
@@ -118,13 +144,6 @@ def update_chore():
 def remove_horse():
     horse_id = request.json['horse_id']
     horses_collection.delete_one({'_id': ObjectId(horse_id)})
-    return jsonify({'success': True})
-
-@app.route('/remove_chore', methods=['POST'])
-@login_required
-def remove_chore():
-    chore_id = request.json['chore_id']
-    chores_collection.delete_one({'_id': ObjectId(chore_id)})
     return jsonify({'success': True})
 
 @app.route('/change_password', methods=['POST'])
@@ -158,15 +177,11 @@ def get_horse(horse_id):
     horse = horses_collection.find_one({'_id': ObjectId(horse_id)})
     return jsonify(horse)
 
-@app.route('/edit_horse', methods=['POST'])
+@app.route('/edit_horse/<horse_id>', methods=['POST'])
 @login_required
-def edit_horse():
-    horse_id = request.json.get('horse_id')
-    updated_data = request.json.get('updated_data')
-    if not horse_id or not updated_data:
-        return jsonify({'success': False, 'message': 'Missing horse_id or updated_data'}), 400
-
-    horses_collection.update_one({'_id': ObjectId(horse_id)}, {'$set': updated_data})
+def edit_horse(horse_id):
+    horse_data = request.json
+    horses_collection.update_one({'_id': ObjectId(horse_id)}, {'$set': horse_data})
     return jsonify({'success': True})
 
 @app.route('/get_logs')
@@ -190,10 +205,10 @@ def serve_static(filename):
     return send_from_directory('static', filename)
 
 if __name__ == '__main__':
-       # Create default admin user if not exists
-       if not users_collection.find_one({'username': 'admin'}):
-           users_collection.insert_one({
-               'username': 'admin',
-               'password': generate_password_hash('admin')
-           })
-       app.run(host='0.0.0.0', debug=True)
+    # Create default admin user if not exists
+    if not users_collection.find_one({'username': 'admin'}):
+        users_collection.insert_one({
+            'username': 'admin',
+            'password': generate_password_hash('admin')
+        })
+    app.run(host='0.0.0.0', debug=True)
