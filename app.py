@@ -66,6 +66,8 @@ def welcome():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    if current_user.is_authenticated:
+        return render_template('admin_welcome.html')
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -75,6 +77,11 @@ def login():
             return redirect(url_for('index'))
         return 'Invalid username or password'
     return render_template('login.html')
+
+@app.route('/admin_welcome')
+@login_required
+def admin_welcome():
+    return render_template('admin_welcome.html')
 
 @app.route('/logout')
 @login_required
@@ -124,17 +131,6 @@ def update_chore():
         {'_id': ObjectId(horse_id), 'chores._id': ObjectId(chore_id)},
         {'$set': {'chores.$.completed': completed}}
     )
-    
-    # Add log entry
-    log_entry = {
-        'horse_id': horse_id,
-        'chore_id': chore_id,
-        'completed': completed,
-        'timestamp': datetime.now()
-    }
-    logs_collection.insert_one(log_entry)
-    
-    return jsonify({'success': True})
     
     # Add log entry
     log_entry = {
