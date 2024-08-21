@@ -26,6 +26,13 @@ COMPLETED_CHORES = Gauge('completed_chores', 'Number of completed chores')
 def before_request():
     request.start_time = time.time()
 
+@app.before_request
+def clear_session():
+    if 'first_request' not in session:
+        logout_user()
+        session.clear()
+        session['first_request'] = True
+
 @app.after_request
 def after_request(response):
     request_latency = time.time() - request.start_time
@@ -121,6 +128,10 @@ def admin_welcome():
 def logout():
     logout_user()
     return redirect(url_for('welcome'))
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
 
 @app.route('/index')
 def index():
@@ -287,8 +298,6 @@ def edit_horse(horse_id):
         horse_data = convert_objectid(horse_data)
     return jsonify({'success': True})
 
-
-
 @app.route('/get_logs', methods=['GET'])
 @login_required
 def get_logs():
@@ -302,12 +311,13 @@ def get_logs():
             '$lte': datetime.strptime(end_date, '%Y-%m-%d')
         }
     
-    logs = list(logs_collection.find(query).sort('timestamp', -1))
+    logs = list(logs_collection.find(query).sort('timestamp', -1).limit(50))
+    
     return jsonify([{
-        'horse_name': log['horse_name'],
-        'chore_name': log['chore_name'],
-        'completed': log['completed'],
-        'timestamp': log['timestamp'].isoformat()
+        'horse_name': log.get('horse_name', 'Unknown'),
+        'chore_name': log.get('chore_name', 'Unknown'),
+        'completed': log.get('completed', False),
+        'timestamp': log['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
     } for log in logs])
 
 @app.route('/static/<path:filename>')

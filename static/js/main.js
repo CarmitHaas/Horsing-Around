@@ -256,92 +256,52 @@ $(document).on('click', '.edit-chore', function() {
     }
   }
 });
-// // Handle remove chore
-// $(".remove-chore").on("click", function () {
-//   var choreId = $(this).data("chore-id");
-//   if (confirm("Are you sure you want to remove this chore?")) {
-//     $.ajax({
-//       url: "/remove_chore",
-//       method: "POST",
-//       contentType: "application/json",
-//       data: JSON.stringify({ chore_id: choreId }),
-//       success: function (response) {
-//         if (response.success) {
-//           location.reload();
-//         }
-//       },
-//     });
-//   }
-// });
 
-// $("#add-chore-form").on("submit", function (e) {
-//   e.preventDefault();
-//   var choreData = {
-//     name: $("#chore-name").val(),
-//     category: $("#chore-category").val(),
-//   };
-
-//   $.ajax({
-//     url: "/add_chore",
-//     method: "POST",
-//     contentType: "application/json",
-//     data: JSON.stringify(choreData),
-//     success: function (response) {
-//       if (response.success) {
-//         location.reload();
-//       }
-//     },
-//   });
-// });
-
-// // Delete chore
-// $(".delete-chore").click(function () {
-//   const choreId = $(this).data("chore-id");
-//   if (confirm("Are you sure you want to delete this chore?")) {
-//     $.ajax({
-//       url: "/delete_chore",
-//       method: "POST",
-//       contentType: "application/json",
-//       data: JSON.stringify({ chore_id: choreId }),
-//       success: function (response) {
-//         if (response.success) {
-//           location.reload();
-//         }
-//       },
-//     });
-//   }
-// });
-
-// View logs
-$('#view-logs').click(function () {
-  $('#view-logs-modal').modal('show');
-  loadLogs();
-});
-
-$('#log-date-range').daterangepicker({
-  opens: 'left'
-}, function (start, end, label) {
-  loadLogs(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
-});
-
-function loadLogs(startDate, endDate) {
-  let url = '/get_logs';
-  if (startDate && endDate) {
-    url += `?start_date=${startDate}&end_date=${endDate}`;
-  }
-  $.get(url, function (data) {
-    const logsContainer = $('#logs-container');
-    logsContainer.empty();
-    data.forEach(log => {
-      logsContainer.append(`
-                  <div class="log-entry">
-                      <p class="mb-1"><strong>${log.horse_name}</strong>: ${log.chore_name}</p>
-                      <p class="mb-0 log-timestamp">${new Date(log.timestamp).toLocaleString()}</p>
-                  </div>
-              `);
-    });
+$('#view-logs').click(function() {
+  $.get('/get_logs', function(data) {
+      let logsHtml = '<ul class="list-group">';
+      data.forEach(function(log) {
+          logsHtml += `<li class="list-group-item">
+                          <strong>${log.timestamp}</strong>: 
+                          ${log.horse_name} - ${log.chore_name} 
+                          (${log.completed ? 'Completed' : 'Uncompleted'})
+                       </li>`;
+      });
+      logsHtml += '</ul>';
+      $('#logs-container').html(logsHtml);
+      $('#view-logs-modal').modal('show');
   });
-}
+});
+// // View logs
+// $('#view-logs').click(function () {
+//   $('#view-logs-modal').modal('show');
+//   loadLogs();
+// });
+
+// $('#log-date-range').daterangepicker({
+//   opens: 'left'
+// }, function (start, end, label) {
+//   loadLogs(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
+// });
+
+// function loadLogs(startDate, endDate) {
+//   let url = '/get_logs';
+//   if (startDate && endDate) {
+//     url += `?start_date=${startDate}&end_date=${endDate}`;
+//   }
+//   $.get(url, function (data) {
+//     const logsContainer = $('#logs-container');
+//     logsContainer.empty();
+//     data.forEach(log => {
+//       logsContainer.append(`
+//                   <div class="log-entry">
+//                       <p class="mb-1"><strong>${log.horse_name}</strong>: ${log.chore_name}</p>
+//                       <p class="mb-0 log-timestamp">${new Date(log.timestamp).toLocaleString()}</p>
+//                   </div>
+//               `);
+//     });
+//   });
+// }
 
 // Handle change password form submission
 $("#change-password-form").on("submit", function (e) {
