@@ -24,16 +24,20 @@ pipeline {
             }
         }
 
-          stage('Build Images') {
-            steps {
-                script {
-                    sh '''
-                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} .
-                    docker build -t ${IMAGE_NAME}-nginx:${BUILD_NUMBER} -f Dockerfile.nginx .
-                    '''
-                }
-            }
+       stage('Build Images') {
+    steps {
+        script {
+            sh '''
+            docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} .
+            docker build -t ${IMAGE_NAME}-nginx:${BUILD_NUMBER} -f Dockerfile.nginx .
+            docker images
+            
+            # Check nginx configuration
+            docker run --rm ${IMAGE_NAME}-nginx:${BUILD_NUMBER} nginx -t
+            '''
         }
+    }
+}
 
 stage('End-to-End Tests') {
     steps {
