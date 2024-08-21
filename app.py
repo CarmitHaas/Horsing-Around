@@ -185,63 +185,6 @@ def update_chore():
     
     return jsonify({'success': True})
 
-# @app.route('/add_chore', methods=['POST'])
-# @login_required
-# def add_chore():
-#     chore_data = request.json
-#     horse_id = chore_data.pop('horse_id', None)
-    
-#     # Insert the chore into the chores collection
-#     result = chores_collection.insert_one(chore_data)
-#     chore_id = result.inserted_id
-    
-#     # If a horse_id is provided, associate the chore with the horse
-#     if horse_id:
-#         horses_collection.update_one(
-#             {'_id': ObjectId(horse_id)},
-#             {'$push': {'chores': str(chore_id)}}
-#         )
-    
-#     return jsonify({'success': True, 'id': str(chore_id)})
-
-# @app.route('/update_chore', methods=['POST'])
-# def update_chore():
-#     chore_id = request.json['chore_id']
-#     completed = request.json['completed']
-    
-#     # Update the chore in the chores collection
-#     chores_collection.update_one(
-#         {'_id': ObjectId(chore_id)},
-#         {'$set': {'completed': completed}}
-#     )
-    
-#     #  # Add log entry
-#     # log_entry = {
-#     #    # 'horse_id': horse_id,
-#     #     'chore_id': chore_id,
-#     #     'completed': completed,
-#     #     'timestamp': datetime.now()
-#     # }
-#     # logs_collection.insert_one(log_entry)
-    
-#     return jsonify({'success': True})
-
-# @app.route('/remove_chore', methods=['POST'])
-# @login_required
-# def remove_chore():
-#     chore_id = request.json['chore_id']
-    
-#     # Remove the chore from the chores collection
-#     chores_collection.delete_one({'_id': ObjectId(chore_id)})
-    
-#     # Remove the chore reference from all horses
-#     horses_collection.update_many(
-#         {},
-#         {'$pull': {'chores': str(chore_id)}}
-#     )
-    
-#     return jsonify({'success': True})
-
 @app.route('/remove_horse', methods=['POST'])
 @login_required
 def remove_horse():
@@ -296,13 +239,25 @@ def delete_chore():
     chores_collection.delete_one({'_id': ObjectId(chore_id)})
     return jsonify({'success': True})
 
+# @app.route('/get_horse/<horse_id>', methods=['GET'])
+# @login_required
+# def get_horse(horse_id):
+#     horse = horses_collection.find_one({'_id': ObjectId(horse_id)})
+#     if horse:
+#         horse = convert_objectid(horse)
+#     return jsonify(horse)
+@app.route('/horses', methods=['GET'])
+def get_horses():
+    horses = list(horses_collection.find({}, {'_id': 1}))
+    return jsonify([str(horse['_id']) for horse in horses])
+
 @app.route('/get_horse/<horse_id>', methods=['GET'])
 @login_required
 def get_horse(horse_id):
     horse = horses_collection.find_one({'_id': ObjectId(horse_id)})
     if horse:
-        horse = convert_objectid(horse)
-    return jsonify(horse)
+        return jsonify(convert_objectid(horse))
+    return jsonify({'error': 'Horse not found'}), 404
 
 
 @app.route('/edit_horse/<horse_id>', methods=['POST'])
