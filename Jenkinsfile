@@ -26,21 +26,43 @@ pipeline {
 
     
 
-        stage('End-to-End Tests') {
-            steps {
-                script {
-                    sh '''
-                    docker-compose  up -d
-                    sleep 5
-                    docker cp ./nginx.conf nginx:/etc/nginx/conf.d/default.conf 
-                    docker exec nginx nginx -s reload
-                    sleep 5
-                    chmod +x e2e.sh
-                    ./e2e.sh ${SERVER_IP}
-                    '''
-                }
+    stage('End-to-End Tests') {
+        steps {
+            script {
+                sh '''
+                docker-compose up -d
+                
+                # Ensure the nginx container is up and running before proceeding
+                CONTAINER_ID=$(docker ps -q --filter="name=nginx")
+                if [ -z "$CONTAINER_ID" ]; then
+                    echo "Nginx container not running!"
+                    exit 1
+                fi
+
+                docker cp ./nginx.conf $CONTAINER_ID:/etc/nginx/conf.d/default.conf
+                docker exec $CONTAINER_ID nginx -s reload
+
+                chmod +x e2e.sh
+                ./e2e.sh ${SERVER_IP}
+                '''
             }
         }
+    }
+        // stage('End-to-End Tests') {
+        //     steps {
+        //         script {
+        //             sh '''
+        //             docker-compose  up -d
+        //             sleep 5
+        //             docker cp ./nginx.conf nginx:/etc/nginx/conf.d/default.conf 
+        //             docker exec nginx nginx -s reload
+        //             sleep 5
+        //             chmod +x e2e.sh
+        //             ./e2e.sh ${SERVER_IP}
+        //             '''
+        //         }
+        //     }
+        // }
         // stage('Unit Tests') {
         //     steps {
         //         // Add your unit tests here if you have any
