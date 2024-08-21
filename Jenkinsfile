@@ -1,103 +1,124 @@
+def RELEASE_TAG
+
 pipeline {
     agent any
+    
     options {
         timestamps()
-        timeout(time: 60, unit: 'MINUTES')
+        timeout(time: 30, unit: 'MINUTES')
     }
     
     environment {
-        GIT_SSH_COMMAND = 'ssh -o StrictHostKeyChecking=no' // Skip host key checking
         ECR_REGISTRY = '644435390668.dkr.ecr.us-east-1.amazonaws.com'
         ECR_REPOSITORY = 'carmit-portfolio'
-        IMAGE_NAME = 'Horsing-Around:1.0'
-        AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')
-        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
-        public_ip = 34.231.225.228:80
+        IMAGE_NAME = 'Horsing-Around'
+        AWS_DEFAULT_REGION = 'us-east-1'
+        EC2_IP = EC2_IP = sh(script: "curl -s http://169.254.169.254/latest/meta-data/public-ipv4", returnStdout: true).trim()
     }
 
     stages {
-        stage('Pull') {
+        stage('Clone') {
             steps {
                 checkout scm
             }
         }
 
-        stage('Build and Test') {
+        // stage('Build') {
+        //     steps {
+        //         script {
+        //             sh 'docker-compose build'
+        //         }
+        //     }
+        // }
+
+        // stage('Unit Tests') {
+        //     steps {
+        //         // Add your unit tests here if you have any
+        //         sh 'echo "Running unit tests"'
+        //     }
+        // }
+
+        // stage('Package') {
+        //     steps {
+        //         script {
+        //             sh "docker tag ${IMAGE_NAME}:latest ${ECR_REGISTRY}/${ECR_REPOSITORY}:${BUILD_NUMBER}"
+        //         }
+        //     }
+        // }
+
+        stage('End-to-End Tests') {
             steps {
                 script {
                     sh '''
-                    docker-compose up --build
+                    docker-compose up -d
                     sleep 30
                     chmod +x e2e.sh
-                    bash ../e2e.sh \${public_ip}
+                    ./e2e.sh ${EC2_IP}
+                    docker-compose down
                     '''
                 }
             }
         }
 
-        stage('Publish to ECR') {
+        stage('Tag and Publish') {
+            when {
+                branch 'main'
+            }
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'ecr-credentials', usernameVariable: 'ECR_USERNAME', passwordVariable: 'ECR_PASSWORD')]) {
+                    // Calculate new version
+                    def latestTag = sh(script: 'git describe --tags --abbrev=0 || echo "0.0.0"', returnStdout: true).trim()
+                    def (major, minor, patch) = latestTag.tokenize('.')
+                    RELEASE_TAG = "${major}.${minor}.${patch.toInteger() + 1}"
+
+                    // Tag Docker image
+                    sh "docker tag ${IMAGE_NAME}:latest ${ECR_REGISTRY}/${ECR_REPOSITORY}:${RELEASE_TAG}"
+                    
+                    // Push to ECR
+                    withCredentials([usernamePassword(credentialsId: 'ecr-credentials', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                         sh """
-                            echo \${ECR_PASSWORD} | docker login -u \${ECR_USERNAME} --password-stdin ${ECR_REGISTRY}
-                            docker tag ${IMAGE_NAME} ${ECR_REGISTRY}/${ECR_REPOSITORY}:${BUILD_NUMBER}
-                            docker push ${ECR_REGISTRY}/${ECR_REPOSITORY}:${BUILD_NUMBER}
+                            aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+                            docker push ${ECR_REGISTRY}/${ECR_REPOSITORY}:${RELEASE_TAG}
+                        """
+                    }
+
+                    // Git tag
+                    withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                        sh """
+                            git config user.email "jenkins@jenkins.com"
+                            git config user.name "Jenkins"
+                            git tag -a ${RELEASE_TAG} -m "Release ${RELEASE_TAG}"
+                            git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/CarmitHaas/Horsing-Around.git ${RELEASE_TAG}
                         """
                     }
                 }
             }
         }
-    }
-        // stage('Deploy') {
-        //       when {
-        //         expression {
-    //                 sh(returnStdout: true, script: 'git log -1 --pretty=%B').trim().contains("#test")
-    //             }
+
+    //     stage('Deploy') {
+    //         when {
+    //             branch 'main'
     //         }
     //         steps {
     //             script {
-    //               def time_stamp = sh(script: "date -u +'%Y%m%d-%H%M'", returnStdout: true).trim()
-
-    //                 withCredentials([sshUserPrivateKey(credentialsId: 'mypemkey', keyFileVariable: 'SSH_KEY')]) {
-    //                     sh '''
-    //                         cp "$SSH_KEY" terraform/Carmit-ID.pem
-    //                         chmod 600 terraform/Carmit-ID.pem
-    //                         ssh-keygen -y -f terraform/Carmit-ID.pem > terraform/Carmit-ID.pem.pub
-    //                     '''
-
-    //                     dir('terraform') {
-    //                         sh 'terraform init'
-    //                         sh "terraform workspace select -or-create ${time_stamp}"
-    //                         sh "terraform apply -var=environment=${time_stamp} -auto-approve"
-    //                     }
+    //                 // Update GitOps repo
+    //                 withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+    //                     sh """
+    //                         git clone https://github.com/CarmitHaas/HorsingAround.git
+    //                         cd gitops-repo
+    //                         sed -i 's|image: .*|image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${RELEASE_TAG}|' deployment.yaml
+    //                         git add deployment.yaml
+    //                         git commit -m "Update image to ${RELEASE_TAG}"
+    //                         git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/CarmitHaas/HorsingAround-gitops.git
+    //                     """
     //                 }
     //             }
     //         }
     //     }
-
-    //     stage('E2E Tests') {
-    //           when {
-    //             expression {
-    //                 sh(returnStdout: true, script: 'git log -1 --pretty=%B').trim().contains("#test")
-    //             }
-    //         }
-    //         steps {
-    //             sh """
-    //                 chmod +x e2e.sh
-    //                 cd terraform
-    //                 public_ip=\$(terraform output instance_public_ips | tr -d '[]," ')
-    //                 bash ../e2e.sh \${public_ip}
-    //             """
-    //         }
-    //     }
     // }
-
+    }
         post {
         failure {
-            script {
-                updateGitlabCommitStatus name: "${env.STAGE_NAME}", state: 'failed'
-            }
             emailext (
                 subject: "Build Failed: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
                 body: """<p>The build failed. Please check the Jenkins console output for details.</p>
