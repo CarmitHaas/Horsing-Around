@@ -8,13 +8,30 @@ from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 import time
 from pymongo.errors import ServerSelectionTimeoutError
-from prometheus_client import generate_latest, REGISTRY, Counter, Histogram
+from prometheus_client import generate_latest, REGISTRY, Counter, Histogram, Gauge
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your_secret_key_here')
 
+# Prometheus metrics
 REQUEST_COUNT = Counter('request_count', 'App Request Count', ['method', 'endpoint', 'http_status'])
 REQUEST_LATENCY = Histogram('request_latency_seconds', 'Request latency', ['endpoint'])
+
+# Custom metrics
+TOTAL_HORSES = Gauge('total_horses', 'Total number of horses')
+TOTAL_CHORES = Gauge('total_chores', 'Total number of chores')
+COMPLETED_CHORES = Gauge('completed_chores', 'Number of completed chores')
+
+@app.before_request
+def before_request():
+    request.start_time = time.time()
+
+@app.after_request
+def after_request(response):
+    request_latency = time.time() - request.start_time
+    REQUEST_LATENCY.labels(request.endpoint).observe(request_latency)
+    REQUEST_COUNT.labels(request.method, request.endpoint, response.status_code).inc()
+    return response
 
 # MongoDB connection with retry logic
 def connect_to_mongo(max_retries=5, delay=5):
@@ -289,19 +306,17 @@ def get_logs():
 def serve_static(filename):
     return send_from_directory('static', filename)
 
-@app.before_request
-def before_request():
-    request.start_time = time.time()
-
-@app.after_request
-def after_request(response):
-    request_latency = time.time() - request.start_time
-    REQUEST_LATENCY.labels(request.endpoint).observe(request_latency)
-    REQUEST_COUNT.labels(request.method, request.endpoint, response.status_code).inc()
-    return response
-
 @app.route('/metrics')
 def metrics():
+    # Update custom metrics
+    TOTAL_HORSES.set(horses_collection.count_documents({}))
+    TOTAL_CHORES.set(sum(len(horse.get('chores', [])) for horse in horses_collection.find()))
+    COMPLETED_CHORES.set(sum(
+        sum(1 for chore in horse.get('chores', []) if chore.get('completed', False))
+        for horse in horses_collection.find()
+    ))
+
+    # Generate and return all metrics
     return generate_latest(REGISTRY)
 
 if __name__ == '__main__':
