@@ -11,36 +11,42 @@ pipeline {
     environment {
         ECR_REGISTRY = '644435390668.dkr.ecr.us-east-1.amazonaws.com'
         ECR_REPOSITORY = 'carmit-portfolio'
-        IMAGE_NAME = 'Horsing-Around'
+        IMAGE_NAME = 'horsing-around'
         AWS_DEFAULT_REGION = 'us-east-1'
-        EC2_IP = ''
+        EC2_IP = '3.238.68.15'
     }
 
+     
     stages {
-
-        stage('Set EC2 IP') {
-            steps {
-                script {
-                   env.EC2_IP = sh(script: "hostname -I | awk '{print \$1}'", returnStdout: true).trim()
-                   echo "Server IP is ${env.EC2_IP}"
-                }
-            }
-        }
-        
         stage('Clone') {
             steps {
                 checkout scm
             }
         }
 
-        // stage('Build') {
-        //     steps {
-        //         script {
-        //             sh 'docker-compose build'
-        //         }
-        //     }
-        // }
+        stage('Build Custom Image') {
+            steps {
+                script {
+                    sh '''
+                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} .
+                    docker build -t ${IMAGE_NAME}-nginx:${BUILD_NUMBER} -f Dockerfile.nginx .
+                    '''
+                }
+            }
+        }
 
+        stage('End-to-End Tests') {
+            steps {
+                script {
+                    sh '''
+                    docker-compose -f docker-compose.ci.yml up -d
+                    sleep 30
+                    chmod +x e2e.sh
+                    ./e2e.sh ${SERVER_IP}
+                    '''
+                }
+            }
+        }
         // stage('Unit Tests') {
         //     steps {
         //         // Add your unit tests here if you have any
@@ -56,19 +62,19 @@ pipeline {
         //     }
         // }
 
-        stage('End-to-End Tests') {
-            steps {
-                script {
-                    sh '''
-                    docker-compose up -d
-                    sleep 30
-                    chmod +x e2e.sh
-                    ./e2e.sh ${EC2_IP}
-                    docker-compose down
-                    '''
-                }
-            }
-        }
+        // stage('End-to-End Tests') {
+        //     steps {
+        //         script {
+        //             sh '''
+        //             docker-compose up -d
+        //             sleep 30
+        //             chmod +x e2e.sh
+        //             ./e2e.sh ${EC2_IP}
+        //             docker-compose down
+        //             '''
+        //         }
+        //     }
+        // }
 
         stage('Tag and Publish') {
             when {
@@ -127,27 +133,35 @@ pipeline {
     //     }
     // }
     }
-        post {
-        failure {
-            emailext (
-                subject: "Build Failed: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
-                body: """<p>The build failed. Please check the Jenkins console output for details.</p>
-                         <p>Build URL: ${env.BUILD_URL}</p>""",
-                recipientProviders: [culprits(), developers()],
-                attachLog: true,
-                compressLog: true
-            )
+
+    post {
+        always {
+            sh 'docker-compose -f docker-compose.ci.yml down || true'
         }
-        success {
-            emailext (
-                subject: "Build Successful: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
-                body: """<p>The build was successful. Great job!!</p>
-                         <p>Build URL: ${env.BUILD_URL}</p>""",
-                recipientProviders: [culprits(), developers()],
-                attachLog: true,
-                compressLog: true
-            )
-        }
+       
     }
 }
+//         post {
+//         failure {
+//             emailext (
+//                 subject: "Build Failed: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
+//                 body: """<p>The build failed. Please check the Jenkins console output for details.</p>
+//                          <p>Build URL: ${env.BUILD_URL}</p>""",
+//                 recipientProviders: [culprits(), developers()],
+//                 attachLog: true,
+//                 compressLog: true
+//             )
+//         }
+//         success {
+//             emailext (
+//                 subject: "Build Successful: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
+//                 body: """<p>The build was successful. Great job!!</p>
+//                          <p>Build URL: ${env.BUILD_URL}</p>""",
+//                 recipientProviders: [culprits(), developers()],
+//                 attachLog: true,
+//                 compressLog: true
+//             )
+//         }
+//     }
+// }
 
