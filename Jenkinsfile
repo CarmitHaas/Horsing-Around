@@ -17,10 +17,19 @@ pipeline {
     }
 
     stages {
+
+        stage('Set EC2 IP') {
+            steps {
+                script {
+                    env.EC2_IP = sh(script: "curl -s http://169.254.169.254/latest/meta-data/public-ipv4", returnStdout: true).trim()
+                    echo "EC2 IP is ${env.EC2_IP}"
+                }
+            }
+        }
+        
         stage('Clone') {
             steps {
                 checkout scm
-                env.EC2_IP = sh(script: "curl -s http://169.254.169.254/latest/meta-data/public-ipv4", returnStdout: true).trim()
             }
         }
 
