@@ -24,16 +24,26 @@ pipeline {
             }
         }
 
-     stage('Build Images') {
+ stage('Build Images') {
     steps {
         script {
             sh '''
             docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} .
             docker build -t ${IMAGE_NAME}-nginx:${BUILD_NUMBER} -f Dockerfile.nginx .
-            docker images
+        
+            
+            # Create a temporary nginx.conf for testing
+            docker run --rm -e UPSTREAM_SERVER=localhost:5000 ${IMAGE_NAME}-nginx:${BUILD_NUMBER} /bin/sh -c "envsubst < /etc/nginx/nginx.conf.template > /tmp/nginx.conf"
+            
+            # Copy the config file from the container
+            docker cp $(docker create --name temp_nginx ${IMAGE_NAME}-nginx:${BUILD_NUMBER}):/tmp/nginx.conf ./nginx.conf
+            docker rm temp_nginx
             
             # Check nginx configuration
-            docker run --rm -e UPSTREAM_SERVER=localhost:5000 ${IMAGE_NAME}-nginx:${BUILD_NUMBER} /bin/sh -c "envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -t"
+            docker run --rm -v $(pwd)/nginx.conf:/etc/nginx/nginx.conf:ro nginx:alpine nginx -t
+            
+            # Clean up
+            rm ./nginx.conf
             '''
         }
     }
