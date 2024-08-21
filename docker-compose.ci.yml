@@ -2,24 +2,19 @@ version: "3"
 services:
   web:
     image: ${IMAGE_NAME}:${BUILD_NUMBER}
-    ports:
-      - "5000:5000"
     environment:
       - MONGO_URI=mongodb://mongo:27017/
     depends_on:
       - mongo
     networks:
-      - db-network
-      - frontend-network
+      - app-network
 
   mongo:
     image: mongo:latest
-    ports:
-      - "27017:27017"
     volumes:
       - mongodb_data:/data/db
     networks:
-      - db-network
+      - app-network
 
   nginx:
     image: ${IMAGE_NAME}-nginx:${BUILD_NUMBER}
@@ -28,13 +23,11 @@ services:
     depends_on:
       - web
     networks:
-      - frontend-network
+      - app-network
 
 volumes:
   mongodb_data:
 
 networks:
-  db-network:
-    driver: bridge
-  frontend-network:
+  app-network:
     driver: bridge

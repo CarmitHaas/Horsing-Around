@@ -24,73 +24,34 @@ pipeline {
             }
         }
 
-    
-
-    stage('End-to-End Tests') {
-        steps {
-            script {
-                sh '''
-                docker-compose up -d
-                
-                # Ensure the nginx container is up and running before proceeding
-                CONTAINER_ID=$(docker ps -q --filter="name=nginx")
-                if [ -z "$CONTAINER_ID" ]; then
-                    echo "Nginx container not running!"
-                    exit 1
-                fi
-
-                docker cp ./static/nginx.conf $CONTAINER_ID:/etc/nginx/conf.d/default.conf
-                docker exec $CONTAINER_ID nginx -s reload
-
-                chmod +x e2e.sh
-                ./e2e.sh ${SERVER_IP}
-                '''
+          stage('Build Images') {
+            steps {
+                script {
+                    sh '''
+                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} .
+                    docker build -t ${IMAGE_NAME}-nginx:${BUILD_NUMBER} -f Dockerfile.nginx .
+                    docker images
+                    '''
+                }
             }
         }
-    }
-        // stage('End-to-End Tests') {
-        //     steps {
-        //         script {
-        //             sh '''
-        //             docker-compose  up -d
-        //             sleep 5
-        //             docker cp ./nginx.conf nginx:/etc/nginx/conf.d/default.conf 
-        //             docker exec nginx nginx -s reload
-        //             sleep 5
-        //             chmod +x e2e.sh
-        //             ./e2e.sh ${SERVER_IP}
-        //             '''
-        //         }
-        //     }
-        // }
-        // stage('Unit Tests') {
-        //     steps {
-        //         // Add your unit tests here if you have any
-        //         sh 'echo "Running unit tests"'
-        //     }
-        // }
 
-        // stage('Package') {
-        //     steps {
-        //         script {
-        //             sh "docker tag ${IMAGE_NAME}:latest ${ECR_REGISTRY}/${ECR_REPOSITORY}:${BUILD_NUMBER}"
-        //         }
-        //     }
-        // }
+  stage('End-to-End Tests') {
+            steps {
+                script {
+                    sh '''
+                    docker-compose -f docker-compose.ci.yml up -d
+                    
+                    # Wait for services to be ready
+                
 
-        // stage('End-to-End Tests') {
-        //     steps {
-        //         script {
-        //             sh '''
-        //             docker-compose up -d
-        //             sleep 30
-        //             chmod +x e2e.sh
-        //             ./e2e.sh ${EC2_IP}
-        //             docker-compose down
-        //             '''
-        //         }
-        //     }
-        // }
+                    # Run the e2e tests
+                    chmod +x e2e.sh
+                    ./e2e.sh ${SERVER_IP}
+                    '''
+                }
+            }
+        }
 
         stage('Tag and Publish') {
             when {
