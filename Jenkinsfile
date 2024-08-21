@@ -24,22 +24,17 @@ pipeline {
             }
         }
 
-        stage('Build Custom Image') {
-            steps {
-                script {
-                    sh '''
-                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} .
-                    docker build -t ${IMAGE_NAME}-nginx:${BUILD_NUMBER} -f Dockerfile.nginx .
-                    '''
-                }
-            }
-        }
+    
 
         stage('End-to-End Tests') {
             steps {
                 script {
                     sh '''
-                    docker-compose -f docker-compose.ci.yml up -d
+                    docker-compose  up -d
+                    sleep 5
+                    docker cp ./nginx.conf nginx:/etc/nginx/conf.d/default.conf 
+                    docker exec nginx nginx -s reload
+                    sleep 5
                     chmod +x e2e.sh
                     ./e2e.sh ${SERVER_IP}
                     '''
