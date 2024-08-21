@@ -23,15 +23,15 @@ pipeline {
             }
         }
 
-        stage('Build Images') {
-            steps {
-                script {
-                    sh '''
-                    docker-compose build
-                    '''
-                }
-            }
-        }
+        // stage('Build Images') {
+        //     steps {
+        //         script {
+        //             sh '''
+        //             docker-compose build
+        //             '''
+        //         }
+        //     }
+        // }
 
         stage('Run and Test') {
             steps {
