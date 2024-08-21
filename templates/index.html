@@ -67,26 +67,28 @@
                                 <h6>{{ category.replace('_', ' ').title() }}</h6>
                                 {% for chore in horse.chores if chore.category == category %}
                                 <div class="form-check d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <input type="checkbox" class="form-check-input chore-checkbox" 
-                                               id="chore-{{ horse._id }}-{{ chore._id }}"
-                                               data-horse-id="{{ horse._id }}" 
-                                               data-chore-id="{{ chore._id }}"
-                                               {% if chore.completed %}checked{% endif %}>
-                                        <label class="form-check-label" for="chore-{{ horse._id }}-{{ chore._id }}">
-                                            {{ chore.name }}
-                                        </label>
-                                    </div>
-                                    {% if current_user.is_authenticated %}
-                                    <div>
-                                        <button class="btn btn-sm btn-outline-primary edit-chore" data-horse-id="{{ horse._id }}" data-chore-id="{{ chore._id }}">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-danger delete-chore" data-horse-id="{{ horse._id }}" data-chore-id="{{ chore._id }}">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </div>
-                                    {% endif %}
+                                  <div>
+                                    <input class="form-check-input chore-checkbox" type="checkbox" 
+                                           id="chore-{{ horse._id }}-{{ chore._id }}"
+                                           data-horse-id="{{ horse._id }}" 
+                                           data-chore-id="{{ chore._id }}"
+                                           {% if chore.completed %}checked{% endif %}>
+                                    <label class="form-check-label" for="chore-{{ horse._id }}-{{ chore._id }}">
+                                      {{ chore.name }}
+                                    </label>
+                                  </div>
+                                  {% if current_user.is_authenticated %}
+                                  <div>
+                                    <button class="btn btn-sm btn-outline-primary edit-chore" 
+                                            data-horse-id="{{ horse._id }}" data-chore-id="{{ chore._id }}">
+                                      <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger delete-chore" 
+                                            data-horse-id="{{ horse._id }}" data-chore-id="{{ chore._id }}">
+                                      <i class="bi bi-trash"></i>
+                                    </button>
+                                  </div>
+                                  {% endif %}
                                 </div>
                                 {% endfor %}
                             </div>
