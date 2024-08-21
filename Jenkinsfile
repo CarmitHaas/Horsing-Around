@@ -30,28 +30,60 @@ pipeline {
                     sh '''
                     docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} .
                     docker build -t ${IMAGE_NAME}-nginx:${BUILD_NUMBER} -f Dockerfile.nginx .
-                    docker images
                     '''
                 }
             }
         }
 
-  stage('End-to-End Tests') {
-            steps {
-                script {
-                    sh '''
-                    docker-compose -f docker-compose.ci.yml up -d
+stage('End-to-End Tests') {
+    steps {
+        script {
+            sh '''
+            echo "Starting services..."
+            docker-compose -f docker-compose.ci.yml up -d
+
+            echo "Waiting for services to start..."
+            sleep 30
+
+            echo "Checking container status..."
+            docker ps -a
+
+            echo "Checking container logs..."
+            docker-compose -f docker-compose.ci.yml logs
+
+            echo "Checking network..."
+            docker network ls
+            docker network inspect $(docker network ls --filter name=horsing-around --format "{{.ID}}")
+
+            echo "Checking nginx configuration..."
+            docker exec $(docker ps -q --filter name=nginx) nginx -T
+
+            echo "Checking web application logs..."
+            docker logs $(docker ps -q --filter name=web)
+
+            echo "Running e2e tests..."
+            chmod +x e2e.sh
+            ./e2e.sh ${SERVER_IP}
+            '''
+        }
+    }
+}
+//   stage('End-to-End Tests') {
+//             steps {
+//                 script {
+//                     sh '''
+//                     docker-compose -f docker-compose.ci.yml up -d
                     
-                    # Wait for services to be ready
+//                     # Wait for services to be ready
                 
 
-                    # Run the e2e tests
-                    chmod +x e2e.sh
-                    ./e2e.sh ${SERVER_IP}
-                    '''
-                }
-            }
-        }
+//                     # Run the e2e tests
+//                     chmod +x e2e.sh
+//                     ./e2e.sh ${SERVER_IP}
+//                     '''
+//                 }
+//             }
+//         }
 
         stage('Tag and Publish') {
             when {
