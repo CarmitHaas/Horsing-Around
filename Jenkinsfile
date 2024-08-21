@@ -24,7 +24,7 @@ pipeline {
             }
         }
 
-       stage('Build Images') {
+     stage('Build Images') {
     steps {
         script {
             sh '''
@@ -33,7 +33,7 @@ pipeline {
             docker images
             
             # Check nginx configuration
-            docker run --rm ${IMAGE_NAME}-nginx:${BUILD_NUMBER} nginx -t
+            docker run --rm -e UPSTREAM_SERVER=localhost:5000 ${IMAGE_NAME}-nginx:${BUILD_NUMBER} /bin/sh -c "envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -t"
             '''
         }
     }

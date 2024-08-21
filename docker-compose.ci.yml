@@ -20,6 +20,8 @@ services:
     image: ${IMAGE_NAME}-nginx:${BUILD_NUMBER}
     ports:
       - "80:80"
+    environment:
+      - UPSTREAM_SERVER=web:5000
     depends_on:
       - web
     networks:
