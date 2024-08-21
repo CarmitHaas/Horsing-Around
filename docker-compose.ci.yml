@@ -1,7 +1,10 @@
-version: "3"
+version: '3'
 services:
   web:
-    image: ${IMAGE_NAME}:${BUILD_NUMBER}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${IMAGE_NAME}:latest
     environment:
       - MONGO_URI=mongodb://mongo:27017/
     depends_on:
@@ -17,11 +20,11 @@ services:
       - app-network
 
   nginx:
-    image: ${IMAGE_NAME}-nginx:${BUILD_NUMBER}
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
     ports:
       - "80:80"
-    environment:
-      - UPSTREAM_SERVER=web:5000
     depends_on:
       - web
     networks:

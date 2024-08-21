@@ -37,7 +37,7 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    docker-compose up -d
+                    docker-compose up -f docker-compose.ci.yml
                     sleep 30  // Give some time for services to start
 
                     # Run your tests here

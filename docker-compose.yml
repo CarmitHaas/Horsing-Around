@@ -1,38 +1,41 @@
-version: '3'
+version: "3"
 services:
   web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: ${IMAGE_NAME}:latest
+    build: .
+    ports:
+      - "5000:5000"
     environment:
       - MONGO_URI=mongodb://mongo:27017/
     depends_on:
       - mongo
     networks:
-      - app-network
-
+      - db-network
+      - frontend-network
   mongo:
     image: mongo:latest
+    ports:
+      - "27017:27017"
     volumes:
       - mongodb_data:/data/db
+    #   - ./data:/data
+    # command: bash -c "mongod --bind_ip_all & sleep 10 && /data/init-mongo.sh && wait"
     networks:
-      - app-network
-
+      - db-network
   nginx:
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile.nginx
+    image: nginx:latest
     ports:
       - "80:80"
     depends_on:
       - web
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./static:/static
     networks:
-      - app-network
-
+      - frontend-network
 volumes:
   mongodb_data:
-
 networks:
-  app-network:
+  db-network:
+    driver: bridge
+  frontend-network:
     driver: bridge
