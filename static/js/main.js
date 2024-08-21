@@ -242,13 +242,15 @@ $(document).on('click', '.edit-chore', function() {
         }),
         success: function(response) {
           if (response.success) {
+            alert(response.message);
             location.reload();
           } else {
-            alert("Failed to update chore.");
+            alert(response.message || "Failed to update chore.");
           }
         },
-        error: function() {
-          alert("An error occurred while updating the chore.");
+        error: function(jqXHR, textStatus, errorThrown) {
+          console.error("Error details:", jqXHR.responseText, textStatus, errorThrown);
+          alert("An error occurred while updating the chore. Please check the console for details.");
         }
       });
     }

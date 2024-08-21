@@ -267,10 +267,23 @@ def change_password():
 @app.route('/edit_chore', methods=['POST'])
 @login_required
 def edit_chore():
-    chore_id = request.json['chore_id']
-    updated_data = request.json['updated_data']
-    chores_collection.update_one({'_id': ObjectId(chore_id)}, {'$set': updated_data})
-    return jsonify({'success': True})
+    data = request.json
+    horse_id = data['horse_id']
+    chore_id = data['chore_id']
+    updated_data = data['updated_data']
+    
+    result = horses_collection.update_one(
+        {'_id': ObjectId(horse_id), 'chores._id': ObjectId(chore_id)},
+        {'$set': {
+            'chores.$.name': updated_data['name'],
+            'chores.$.category': updated_data['category']
+        }}
+    )
+    
+    if result.modified_count > 0:
+        return jsonify({'success': True, 'message': 'Chore updated successfully'})
+    else:
+        return jsonify({'success': False, 'message': 'Failed to update chore'}), 400
 
 @app.route('/delete_chore', methods=['POST'])
 @login_required
