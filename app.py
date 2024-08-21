@@ -186,21 +186,29 @@ def update_chore():
     horse_id = request.json['horse_id']
     chore_id = request.json['chore_id']
     completed = request.json['completed']
-    horses_collection.update_one(
-        {'_id': ObjectId(horse_id), 'chores._id': ObjectId(chore_id)},
-        {'$set': {'chores.$.completed': completed}}
-    )
     
-    # Add log entry
-    log_entry = {
-        'horse_id': horse_id,
-        'chore_id': chore_id,
-        'completed': completed,
-        'timestamp': datetime.now()
-    }
-    logs_collection.insert_one(log_entry)
+    horse = horses_collection.find_one({'_id': ObjectId(horse_id)})
+    chore = next((c for c in horse['chores'] if c['_id'] == ObjectId(chore_id)), None)
     
-    return jsonify({'success': True})
+    if horse and chore:
+        horses_collection.update_one(
+            {'_id': ObjectId(horse_id), 'chores._id': ObjectId(chore_id)},
+            {'$set': {'chores.$.completed': completed}}
+        )
+        
+        # Add log entry
+        log_entry = {
+            'horse_name': horse['name'],
+            'chore_name': chore['name'],
+            'completed': completed,
+            'timestamp': datetime.now()
+        }
+        logs_collection.insert_one(log_entry)
+        
+        return jsonify({'success': True})
+    
+    return jsonify({'success': False, 'message': 'Horse or chore not found'}), 404
+
 
 @app.route('/remove_horse', methods=['POST'])
 @login_required
@@ -256,13 +264,6 @@ def delete_chore():
     chores_collection.delete_one({'_id': ObjectId(chore_id)})
     return jsonify({'success': True})
 
-# @app.route('/get_horse/<horse_id>', methods=['GET'])
-# @login_required
-# def get_horse(horse_id):
-#     horse = horses_collection.find_one({'_id': ObjectId(horse_id)})
-#     if horse:
-#         horse = convert_objectid(horse)
-#     return jsonify(horse)
 @app.route('/horses', methods=['GET'])
 def get_horses():
     horses = list(horses_collection.find({}, {'_id': 1}))
@@ -286,6 +287,8 @@ def edit_horse(horse_id):
         horse_data = convert_objectid(horse_data)
     return jsonify({'success': True})
 
+
+
 @app.route('/get_logs', methods=['GET'])
 @login_required
 def get_logs():
@@ -300,7 +303,12 @@ def get_logs():
         }
     
     logs = list(logs_collection.find(query).sort('timestamp', -1))
-    return jsonify(logs)
+    return jsonify([{
+        'horse_name': log['horse_name'],
+        'chore_name': log['chore_name'],
+        'completed': log['completed'],
+        'timestamp': log['timestamp'].isoformat()
+    } for log in logs])
 
 @app.route('/static/<path:filename>')
 def serve_static(filename):
