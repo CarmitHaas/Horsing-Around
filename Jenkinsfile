@@ -13,13 +13,14 @@ pipeline {
         ECR_REPOSITORY = 'carmit-portfolio'
         IMAGE_NAME = 'Horsing-Around'
         AWS_DEFAULT_REGION = 'us-east-1'
-        EC2_IP = EC2_IP = sh(script: "curl -s http://169.254.169.254/latest/meta-data/public-ipv4", returnStdout: true).trim()
+        EC2_IP = ''
     }
 
     stages {
         stage('Clone') {
             steps {
                 checkout scm
+                env.EC2_IP = sh(script: "curl -s http://169.254.169.254/latest/meta-data/public-ipv4", returnStdout: true).trim()
             }
         }
 
@@ -83,12 +84,12 @@ pipeline {
                     }
 
                     // Git tag
-                    withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                     sshagent(['github']) {
                         sh """
                             git config user.email "jenkins@jenkins.com"
                             git config user.name "Jenkins"
                             git tag -a ${RELEASE_TAG} -m "Release ${RELEASE_TAG}"
-                            git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/CarmitHaas/Horsing-Around.git ${RELEASE_TAG}
+                            git push git@github.com:CarmitHaas/Horsing-Around.git ${RELEASE_TAG}
                         """
                     }
                 }
@@ -102,16 +103,16 @@ pipeline {
     //         steps {
     //             script {
     //                 // Update GitOps repo
-    //                 withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+    //                sshagent(['github-ssh-key']) {
     //                     sh """
-    //                         git clone https://github.com/CarmitHaas/HorsingAround.git
-    //                         cd gitops-repo
+    //                         git clone git@github.com:CarmitHaas/HorsingAround-gitops.git
+    //                         cd HorsingAround-gitops
     //                         sed -i 's|image: .*|image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${RELEASE_TAG}|' deployment.yaml
     //                         git add deployment.yaml
     //                         git commit -m "Update image to ${RELEASE_TAG}"
-    //                         git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/CarmitHaas/HorsingAround-gitops.git
+    //                         git push origin main
     //                     """
-    //                 }
+    // //                 }
     //             }
     //         }
     //     }
