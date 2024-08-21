@@ -13,7 +13,7 @@ pipeline {
         ECR_REPOSITORY = 'carmit-portfolio'
         IMAGE_NAME = 'horsing-around'
         AWS_DEFAULT_REGION = 'us-east-1'
-        EC2_IP = '3.238.68.15'
+        SERVER_IP = '3.238.68.15'
     }
 
      
@@ -40,7 +40,6 @@ pipeline {
                 script {
                     sh '''
                     docker-compose -f docker-compose.ci.yml up -d
-                    sleep 30
                     chmod +x e2e.sh
                     ./e2e.sh ${SERVER_IP}
                     '''
