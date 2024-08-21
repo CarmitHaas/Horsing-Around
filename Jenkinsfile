@@ -39,7 +39,7 @@ pipeline {
                     exit 1
                 fi
 
-                docker cp ./nginx.conf $CONTAINER_ID:/etc/nginx/conf.d/default.conf
+                docker cp ./static/nginx.conf $CONTAINER_ID:/etc/nginx/conf.d/default.conf
                 docker exec $CONTAINER_ID nginx -s reload
 
                 chmod +x e2e.sh
