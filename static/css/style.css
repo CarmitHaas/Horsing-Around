@@ -63,6 +63,7 @@ body {
 
 .form-check {
     padding: 5px 0;
+    padding-left: 1.5rem;  /* Add this line */
 }
 
 .edit-chore,
@@ -106,4 +107,9 @@ body {
     padding: 20px 40px;
     border-radius: 15px;
     box-shadow: 2px 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+
+.form-check-input {
+    margin-left: -1.5rem;  /* Add this line */
 }
