@@ -13,7 +13,7 @@ pipeline {
         ECR_REPOSITORY = 'carmit-portfolio'
         IMAGE_NAME = 'horsing-around'
         AWS_DEFAULT_REGION = 'us-east-1'
-        SERVER_IP = '3.238.68.15'
+        SERVER_IP = '3.239.180.46'
     }
 
     stages {
@@ -23,15 +23,15 @@ pipeline {
             }
         }
 
-        // stage('Build Images') {
-        //     steps {
-        //         script {
-        //             sh '''
-        //             docker-compose build
-        //             '''
-        //         }
-        //     }
-        // }
+        stage('Build Images') {
+            steps {
+                script {
+                    sh '''
+                    docker-compose build
+                    '''
+                }
+            }
+        }
 
         stage('Run and Test') {
             steps {
