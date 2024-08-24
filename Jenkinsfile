@@ -13,7 +13,7 @@ pipeline {
         ECR_REPOSITORY = 'carmit-portfolio'
         IMAGE_NAME = 'horsing-around'
         AWS_DEFAULT_REGION = 'us-east-1'
-        SERVER_IP = '3.239.180.46'
+        EC2_IP = sh(script: "curl -s http://169.254.169.254/latest/meta-data/local-ipv4", returnStdout: true).trim()
     }
 
     stages {
@@ -32,25 +32,29 @@ pipeline {
         //         }
         //     }
         // }
-
-        stage('Run and Test') {
+        stage('Run'){
             steps {
-                script {
-                    sh '''
-                    docker-compose -f docker-compose.ci.yml up
-                    sleep 30  // Give some time for services to start
+                sh 'docker-compose up -d'
+            }
+        }
 
-                    # Run your tests here
-                    # For example:
-                    curl -fsSLI http://${SERVER_IP}:80
-
-                    docker-compose logs
-
-                    docker-compose down
-                    '''
+        stage('Test'){
+            steps {
+                retry(15) {
+                sleep(time: 3, unit: 'SECONDS')
+                sh "curl -fsSLI http://${EC2_IP}:80"
+                }
+            }
+            post {
+                always {
+                    sh 'docker-compose down -v'
+                }
+                success {
+                    sh "echo 'hurdle-archive was up and running on nginx'"
                 }
             }
         }
+
 
         stage('Calculate Version') {
             when {
