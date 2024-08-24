@@ -34,7 +34,10 @@ pipeline {
         // }
         stage('Run'){
             steps {
-                sh 'docker-compose up -d'
+                script{
+                  echo "EC2 IP Address: ${EC2_IP}"
+                  docker-compose up -d
+                }
             }
         }
 
