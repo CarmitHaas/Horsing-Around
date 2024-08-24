@@ -13,7 +13,7 @@ pipeline {
         ECR_REPOSITORY = 'carmit-portfolio'
         IMAGE_NAME = 'horsing-around'
         AWS_DEFAULT_REGION = 'us-east-1'
-        SERVER_IP = '3.239.180.46'
+        SERVER_IP = ''
     }
 
     stages {
@@ -22,7 +22,18 @@ pipeline {
                 checkout scm
             }
         }
-
+        stage('Set Server IP') {
+            steps {
+                script {
+                    SERVER_IP = sh(
+                        script: 'curl http://checkip.amazonaws.com',
+                        returnStdout: true
+                    ).trim()
+                    env.SERVER_IP = SERVER_IP
+                    echo "Server IP is ${env.SERVER_IP}"
+                }
+            }
+        }
         // stage('Build Images') {
         //     steps {
         //         script {
@@ -37,15 +48,12 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    docker-compose -f docker-compose.ci.yml up
-                    sleep 30  // Give some time for services to start
-
-                    # Run your tests here
-                    # For example:
-                    curl -fsSLI http://${SERVER_IP}:80
-
-                    docker-compose logs
-
+                    docker-compose -f docker-compose.ci.yml up -d
+                    sleep 30 
+                    chmod +x e2e.sh
+                    cd terraform
+                    bash ./e2e.sh \${SERVER_IP}
+                    
                     docker-compose down
                     '''
                 }
