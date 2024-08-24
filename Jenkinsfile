@@ -27,20 +27,25 @@ pipeline {
         }
 
         stage('Set Server IP') {
-            steps {
-                script {
-                    SERVER_IP = sh(script: "curl http://checkip.amazonaws.com")
-                    echo "Server IP is ${SERVER_IP}"
-                }
-            }
+    steps {
+        script {
+            SERVER_IP = sh(script: "curl -s http://checkip.amazonaws.com", returnStdout: true).trim()
+            echo "Server IP is ${SERVER_IP}"
         }
+    }
+}
 
         stage('Unit Test') {
             steps {
                 script {
+                    // Create and activate a virtual environment
                     sh '''
-                    pip install pytest
-                    pytest tests/
+                        python3 -m venv venv
+                        . venv/bin/activate
+                        pip install -r requirements.txt
+                        pip install pytest
+                        pytest tests/
+                        deactivate
                     '''
                 }
             }
