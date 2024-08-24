@@ -36,7 +36,7 @@ pipeline {
             steps {
                 script{
                   echo "EC2 IP Address: ${EC2_IP}"
-                  docker-compose up -d
+                  sh "docker-compose up -d"
                 }
             }
         }
