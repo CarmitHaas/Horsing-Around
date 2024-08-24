@@ -44,7 +44,7 @@ pipeline {
             steps {
                 retry(15) {
                 sleep(time: 3, unit: 'SECONDS')
-                sh "curl -fsSLI http://${EC2_IP}:90"
+                sh "curl -fsSLI http://${EC2_IP}:80"
                 }
             }
             post {
