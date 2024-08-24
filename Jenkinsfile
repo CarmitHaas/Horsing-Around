@@ -13,13 +13,25 @@ pipeline {
         ECR_REPOSITORY = 'carmit-portfolio'
         IMAGE_NAME = 'horsing-around'
         AWS_DEFAULT_REGION = 'us-east-1'
-        EC2_IP = sh(script: "curl -s http://169.254.169.254/latest/meta-data/local-ipv4", returnStdout: true).trim()
+        EC2_IP = ''
     }
 
     stages {
         stage('Clone') {
             steps {
                 checkout scm
+            }
+        }
+        stage('Set EC2 IP') {
+            steps {
+                script {
+                    EC2_IP = sh(
+                        script: 'curl -s http://169.254.169.254/latest/meta-data/local-ipv4',
+                        returnStdout: true
+                    ).trim()
+                    env.EC2_IP = EC2_IP
+                    echo "EC2 IP is ${env.EC2_IP}"
+                }
             }
         }
 
