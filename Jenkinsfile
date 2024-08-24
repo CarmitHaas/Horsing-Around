@@ -1,5 +1,5 @@
 def RELEASE_TAG
-
+def SERVER_IP
 pipeline {
     agent any
     
@@ -13,7 +13,10 @@ pipeline {
         ECR_REPOSITORY = 'carmit-portfolio'
         IMAGE_NAME = 'horsing-around'
         AWS_DEFAULT_REGION = 'us-east-1'
-        SERVER_IP = '44.200.226.15'
+        // E2E_USERNAME = credentials('e2e-username')
+        // E2E_PASSWORD = credentials('e2e-password')
+        E2E_USERNAME = 'admin'
+        E2E_PASSWORD = 'admin'
     }
 
     stages {
@@ -22,40 +25,51 @@ pipeline {
                 checkout scm
             }
         }
-        // stage('Set Server IP') {
-        //     steps {
-        //         script {
-        //             SERVER_IP = 'curl http://checkip.amazonaws.com'
-        //             env.SERVER_IP = SERVER_IP
-        //             echo "Server IP is ${env.SERVER_IP}"
-        //         }
-        //     }
-        // }
-        // stage('Build Images') {
-        //     steps {
-        //         script {
-        //             sh '''
-        //             docker-compose build
-        //             '''
-        //         }
-        //     }
-        // }
 
-        stage('Run and Test') {
+        stage('Set Server IP') {
+            steps {
+                script {
+                    SERVER_IP = sh(script: "curl http://checkip.amazonaws.com")
+                    echo "Server IP is ${SERVER_IP}"
+                }
+            }
+        }
+
+        stage('Unit Test') {
             steps {
                 script {
                     sh '''
-                    docker-compose -f docker-compose.ci.yml up -d
-                    chmod +x e2e.sh
-                    bash ./e2e.sh \${SERVER_IP}
-                    
-                    docker-compose down
+                    pip install pytest
+                    pytest tests/
                     '''
                 }
             }
         }
 
-        stage('Calculate Version') {
+        stage('Build Web App') {
+            steps {
+                script {
+                    sh '''
+                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} -f Dockerfile .
+                    '''
+                }
+            }
+        }
+
+      stage('End-to-end Test') {
+        steps {
+            script {
+                sh '''
+                docker-compose -f docker-compose.ci.yml up -d
+                chmod +x e2e.sh
+                bash ./e2e.sh ${SERVER_IP} ${E2E_USERNAME} ${E2E_PASSWORD}
+                docker-compose -f docker-compose.ci.yml down
+                '''
+                }
+
+        }
+      }
+        stage('Tag') {
             when {
                 branch 'main'
             }
@@ -72,33 +86,19 @@ pipeline {
             }
         }
 
-        stage('Push to ECR') {
+        stage('Publish') {
             when {
                 branch 'main'
             }
             steps {
                 script {
-                    sh """
-                    aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
-                    docker tag ${IMAGE_NAME}:latest ${ECR_REGISTRY}/${ECR_REPOSITORY}:${RELEASE_TAG}
-                    docker push ${ECR_REGISTRY}/${ECR_REPOSITORY}:${RELEASE_TAG}
-                    """
-                }
-            }
-        }
-
-        stage('Git Tag') {
-            when {
-                branch 'main'
-            }
-            steps {
-                sshagent(['github']) {
-                    sh """
-                    git config user.email "jenkins@jenkins.com"
-                    git config user.name "Jenkins"
-                    git tag -a ${RELEASE_TAG} -m "Release ${RELEASE_TAG}"
-                    git push origin ${RELEASE_TAG}
-                    """
+                    withAWS(credentials: 'aws-credentials', region: AWS_DEFAULT_REGION) {
+                        sh """
+                        aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+                        docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${ECR_REGISTRY}/${ECR_REPOSITORY}:${RELEASE_TAG}
+                        docker push ${ECR_REGISTRY}/${ECR_REPOSITORY}:${RELEASE_TAG}
+                        """
+                    }
                 }
             }
         }
@@ -113,6 +113,8 @@ pipeline {
     //                 git clone https://github.com/CarmitHaas/HorsingAround-gitops.git
     //                 cd HorsingAround-gitops
     //                 sed -i 's|image: .*|image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${RELEASE_TAG}|' deployment.yaml
+    //                 git config user.email "jenkins@jenkins.com"
+    //                 git config user.name "Jenkins"
     //                 git add deployment.yaml
     //                 git commit -m "Update image to ${RELEASE_TAG}"
     //                 git push origin main
