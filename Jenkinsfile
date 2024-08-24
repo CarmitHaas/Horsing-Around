@@ -46,9 +46,7 @@ pipeline {
                 script {
                     sh '''
                     docker-compose -f docker-compose.ci.yml up -d
-                    sleep 30 
                     chmod +x e2e.sh
-                    cd terraform
                     bash ./e2e.sh \${SERVER_IP}
                     
                     docker-compose down
