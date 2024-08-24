@@ -13,7 +13,7 @@ pipeline {
         ECR_REPOSITORY = 'carmit-portfolio'
         IMAGE_NAME = 'horsing-around'
         AWS_DEFAULT_REGION = 'us-east-1'
-        SERVER_IP = ''
+        SERVER_IP = '44.200.226.15'
     }
 
     stages {
@@ -22,15 +22,15 @@ pipeline {
                 checkout scm
             }
         }
-        stage('Set Server IP') {
-            steps {
-                script {
-                    SERVER_IP = 'curl http://checkip.amazonaws.com'
-                    env.SERVER_IP = SERVER_IP
-                    echo "Server IP is ${env.SERVER_IP}"
-                }
-            }
-        }
+        // stage('Set Server IP') {
+        //     steps {
+        //         script {
+        //             SERVER_IP = 'curl http://checkip.amazonaws.com'
+        //             env.SERVER_IP = SERVER_IP
+        //             echo "Server IP is ${env.SERVER_IP}"
+        //         }
+        //     }
+        // }
         // stage('Build Images') {
         //     steps {
         //         script {
