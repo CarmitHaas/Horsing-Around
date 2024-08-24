@@ -35,7 +35,7 @@ pipeline {
         stage('Run'){
             steps {
                 script{
-                  sh "docker-compose up -d"
+                  sh "docker-compose -f docker-compose.ci.yml up -d"
                 }
             }
         }
@@ -128,7 +128,7 @@ pipeline {
     post {
         always {
             sh '''
-            docker-compose down -v || true
+            docker-compose -f docker-compose.ci.yml down -v || true
             docker system prune -af
             '''
             cleanWs()
