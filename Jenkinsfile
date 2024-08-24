@@ -25,10 +25,7 @@ pipeline {
         stage('Set Server IP') {
             steps {
                 script {
-                    SERVER_IP = sh(
-                        script: 'curl http://checkip.amazonaws.com',
-                        returnStdout: true
-                    ).trim()
+                    SERVER_IP = 'curl http://checkip.amazonaws.com'
                     env.SERVER_IP = SERVER_IP
                     echo "Server IP is ${env.SERVER_IP}"
                 }
