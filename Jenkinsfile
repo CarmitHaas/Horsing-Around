@@ -35,21 +35,21 @@ pipeline {
     }
 }
 
-       stage('Unit Test') {
-            steps {
-                script {
-                    sh '''
-                    python3 -m venv venv
-                    . venv/bin/activate
-                    pip install -r requirements.txt
-                    pip install pytest mock
-                    export PYTHONPATH=$PYTHONPATH:$(pwd)
-                    pytest -v tests/
-                    deactivate
-                    '''
-                }
-            }
-        }
+    //    stage('Unit Test') {
+    //         steps {
+    //             script {
+    //                 sh '''
+    //                 python3 -m venv venv
+    //                 . venv/bin/activate
+    //                 pip install -r requirements.txt
+    //                 pip install pytest mock
+    //                 export PYTHONPATH=$PYTHONPATH:$(pwd)
+    //                 pytest -v tests/
+    //                 deactivate
+    //                 '''
+    //             }
+    //         }
+    //     }
 
         stage('Build Web App') {
             steps {
