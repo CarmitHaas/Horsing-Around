@@ -1,5 +1,6 @@
 def RELEASE_TAG
 def SERVER_IP
+
 pipeline {
     agent any
     
@@ -61,19 +62,19 @@ pipeline {
             }
         }
 
-      stage('End-to-end Test') {
-        steps {
-            script {
-                sh """
-                docker-compose -f docker-compose.ci.yml up -d
-                chmod +x e2e.sh
-                bash ./e2e.sh ${SERVER_IP} ${E2E_USERNAME} ${E2E_PASSWORD}
-                docker-compose -f docker-compose.ci.yml down
-                """
-                }
-
+        stage('End-to-end Test') {
+            steps {
+                script {
+                    sh """
+                    docker-compose -f docker-compose.ci.yml up -d
+                    chmod +x e2e.sh
+                    bash ./e2e.sh ${SERVER_IP} ${E2E_USERNAME} ${E2E_PASSWORD}
+                    docker-compose -f docker-compose.ci.yml down
+                    """
+                    }
+            }
+        
         }
-      }
         stage('Tag') {
             when {
                 branch 'main'
@@ -97,16 +98,17 @@ pipeline {
             }
             steps {
                 script {
-                    withAWS(credentials: 'aws-credentials', region: AWS_DEFAULT_REGION) {
+                      withCredentials([usernamePassword(credentialsId: 'ecr-credentials', usernameVariable: 'ECR_USERNAME', passwordVariable: 'ECR_PASSWORD')]) {
                         sh """
-                        aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
-                        docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${ECR_REGISTRY}/${ECR_REPOSITORY}:${RELEASE_TAG}
-                        docker push ${ECR_REGISTRY}/${ECR_REPOSITORY}:${RELEASE_TAG}
+                            echo \${ECR_PASSWORD} | docker login -u \${ECR_USERNAME} --password-stdin ${ECR_REGISTRY}
+                            docker tag ${IMAGE_NAME} ${ECR_REGISTRY}/${ECR_REPOSITORY}:${BUILD_NUMBER}
+                            docker push ${ECR_REGISTRY}/${ECR_REPOSITORY}:${BUILD_NUMBER}
                         """
                     }
                 }
             }
         }
+
     }
     //     stage('Deploy') {
     //         when {
