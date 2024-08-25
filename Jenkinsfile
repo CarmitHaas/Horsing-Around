@@ -3,12 +3,12 @@ def SERVER_IP
 
 pipeline {
     agent any
-    
+
     options {
         timestamps()
         timeout(time: 30, unit: 'MINUTES')
     }
-    
+
     environment {
         ECR_REGISTRY = '644435390668.dkr.ecr.us-east-1.amazonaws.com'
         ECR_REPOSITORY = 'carmit-portfolio'
@@ -28,13 +28,13 @@ pipeline {
         }
 
         stage('Set Server IP') {
-    steps {
-        script {
-            SERVER_IP = sh(script: "curl -s http://checkip.amazonaws.com", returnStdout: true).trim()
-            echo "Server IP is ${SERVER_IP}"
+            steps {
+                script {
+                    SERVER_IP = sh(script: 'curl -s http://checkip.amazonaws.com', returnStdout: true).trim()
+                    echo "Server IP is ${SERVER_IP}"
+                }
+            }
         }
-    }
-}
 
     //    stage('Unit Test') {
     //         steps {
@@ -71,9 +71,8 @@ pipeline {
                     bash ./e2e.sh ${SERVER_IP} ${E2E_USERNAME} ${E2E_PASSWORD}
                     docker-compose -f docker-compose.ci.yml down
                     """
-                    }
+                }
             }
-        
         }
         stage('Tag') {
             when {
@@ -82,9 +81,9 @@ pipeline {
             steps {
                 script {
                     sshagent(['github']) {
-                        sh "git fetch --tags"
+                        sh 'git fetch --tags'
                     }
-                    def latestTag = sh(script: "git describe --tags --abbrev=0 || echo 0.0.0", returnStdout: true).trim()
+                    def latestTag = sh(script: 'git describe --tags --abbrev=0 || echo 0.0.0', returnStdout: true).trim()
                     def (major, minor, patch) = latestTag.tokenize('.')
                     RELEASE_TAG = "${major}.${minor}.${(patch as int) + 1}"
                     echo "New version: ${RELEASE_TAG}"
@@ -98,7 +97,7 @@ pipeline {
             }
             steps {
                 script {
-                      withCredentials([usernamePassword(credentialsId: 'ecr-credentials', usernameVariable: 'ECR_USERNAME', passwordVariable: 'ECR_PASSWORD')]) {
+                    withCredentials([usernamePassword(credentialsId: 'ecr-credentials', usernameVariable: 'ECR_USERNAME', passwordVariable: 'ECR_PASSWORD')]) {
                         sh """
                             echo \${ECR_PASSWORD} | docker login -u \${ECR_USERNAME} --password-stdin ${ECR_REGISTRY}
                             docker tag ${IMAGE_NAME} ${ECR_REGISTRY}/${ECR_REPOSITORY}:${BUILD_NUMBER}
@@ -108,7 +107,6 @@ pipeline {
                 }
             }
         }
-
     }
     //     stage('Deploy') {
     //         when {
