@@ -35,21 +35,21 @@ pipeline {
     }
 }
 
-    //    stage('Unit Test') {
-    //         steps {
-    //             script {
-    //                 sh '''
-    //                 python3 -m venv venv
-    //                 . venv/bin/activate
-    //                 pip install -r requirements.txt
-    //                 pip install pytest mock
-    //                 export PYTHONPATH=$PYTHONPATH:$(pwd)
-    //                 pytest -v tests/
-    //                 deactivate
-    //                 '''
-    //             }
-    //         }
-    //     }
+       stage('Unit Test') {
+            steps {
+                script {
+                sh '''
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install -r requirements.txt
+                    pip install pytest
+                    export PYTHONPATH=$PYTHONPATH:$(pwd)
+                    pytest tests/test_routes.py -v
+                    deactivate
+                        '''
+                }
+            }
+        }
 
         stage('Build Web App') {
             steps {
@@ -64,12 +64,12 @@ pipeline {
       stage('End-to-end Test') {
         steps {
             script {
-                sh '''
+                sh """
                 docker-compose -f docker-compose.ci.yml up -d
                 chmod +x e2e.sh
                 bash ./e2e.sh ${SERVER_IP} ${E2E_USERNAME} ${E2E_PASSWORD}
                 docker-compose -f docker-compose.ci.yml down
-                '''
+                """
                 }
 
         }
