@@ -1,6 +1,10 @@
 import pytest
-from app import app
-from flask_login import current_user
+from mock import patch, MagicMock
+
+# Patch the connect_to_mongo function before importing app
+mock_client = MagicMock()
+with patch('app.connect_to_mongo', return_value=mock_client):
+    from app import app, db
 
 @pytest.fixture
 def client():
