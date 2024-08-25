@@ -6,14 +6,15 @@ Public_IP=$1
 USERNAME=$2
 PASSWORD=$3
 
-echo "Testing server at IP: ${Public_IP}"
+echo "Waiting for 30 seconds to allow the server to start..."
+sleep 30
 
 # Function to make API calls
 call_api() {
     method=$1
     endpoint=$2
     data=$3
-    curl -s -X $method -H "Content-Type: application/json" -d "$data" -c cookies.txt -b cookies.txt http://${Public_IP}$endpoint
+    curl -s -X $method -H "Content-Type: application/json" -d "$data" -c cookies.txt -b cookies.txt http://${Public_IP}:80$endpoint
 }
 
 # Function to check if jq is installed
@@ -28,11 +29,11 @@ check_jq() {
 check_jq
 
 # Check if server is up
-if [ "$(curl -s -o /dev/null -w "%{http_code}" http://${Public_IP})" == "200" ]; then
+if [ "$(curl -s -o /dev/null -w "%{http_code}" http://${Public_IP}:80)" == "200" ]; then
     echo "Web server is up!"
 
     # Login
-    login_response=$(curl -s -X POST -c cookies.txt -b cookies.txt -H "Content-Type: application/x-www-form-urlencoded" -d "username=${USERNAME}&password=${PASSWORD}" http://${Public_IP}/login)
+    login_response=$(curl -s -X POST -c cookies.txt -b cookies.txt -H "Content-Type: application/x-www-form-urlencoded" -d "username=${USERNAME}&password=${PASSWORD}" http://${Public_IP}:80/login)
     if [[ $login_response == *"Invalid username or password"* ]]; then
         echo "Login failed. Exiting."
         exit 1
@@ -66,12 +67,12 @@ if [ "$(curl -s -o /dev/null -w "%{http_code}" http://${Public_IP})" == "200" ];
     echo "Added chore: $chore_response"
 
     # Update chore (mark as completed)
-   update_response=$(call_api POST /update_chore '{"horse_id":"'$horse_id'","chore_id":"'$chore_id'","completed":true}')
-    if [[ $(echo $update_response | jq -r '.success') != "true" ]]; then
-    echo "Failed to update chore. Response: $update_response"
-    exit 1
+    update_response=$(call_api POST /update_chore '{"horse_id":"'$horse_id'","chore_id":"'$chore_id'","completed":true}')
+    if [[ $update_response != *"\"success\":true"* ]]; then
+        echo "Failed to update chore. Response: $update_response"
+        exit 1
     fi
-    echo "Updated chore successfully"
+    echo "Updated chore"
 
     # Get logs
     logs_response=$(call_api GET /get_logs)
