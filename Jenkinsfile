@@ -75,21 +75,25 @@ pipeline {
             }
         }
         stage('Tag') {
-            when {
-                branch 'main'
+    when {
+        branch 'main'
+    }
+    steps {
+        script {
+            sshagent(['github']) {
+                sh 'git fetch --tags'
             }
-            steps {
-                script {
-                    sshagent(['github']) {
-                        sh 'git fetch --tags'
-                    }
-                    def latestTag = sh(script: 'git describe --tags --abbrev=0 || echo 0.0.0', returnStdout: true).trim()
-                    def (major, minor, patch) = latestTag.tokenize('.')
-                    RELEASE_TAG = "${major}.${minor}.${(patch as int) + 1}"
-                    echo "New version: ${RELEASE_TAG}"
-                }
+            def latestTag = sh(script: 'git describe --tags --abbrev=0 || echo 1.0.0', returnStdout: true).trim()
+            def (major, minor, patch) = latestTag.tokenize('.')
+            if (latestTag == '1.0.0' && !sh(script: 'git tag', returnStdout: true).trim()) {
+                RELEASE_TAG = '1.0.0'
+            } else {
+                RELEASE_TAG = "${major}.${minor}.${(patch as int) + 1}"
             }
+            echo "New version: ${RELEASE_TAG}"
         }
+    }
+}
 
         stage('Publish') {
             when {
@@ -144,6 +148,7 @@ pipeline {
         always {
             sh '''
             docker-compose down -v || true
+            docker rmi ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest || true
             docker system prune -af
             '''
             cleanWs()
