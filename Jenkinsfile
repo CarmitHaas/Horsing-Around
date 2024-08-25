@@ -44,7 +44,7 @@ pipeline {
                     pip install -r requirements.txt
                     pip install pytest
                     export PYTHONPATH=$PYTHONPATH:$(pwd)
-                    pytest tests/test_routes.py -v
+                    pytest tests/test_app.py -v
                     deactivate
                         '''
                 }
