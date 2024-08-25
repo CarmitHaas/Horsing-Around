@@ -68,11 +68,11 @@ if [ "$(curl -s -o /dev/null -w "%{http_code}" http://${Public_IP}:80)" == "200"
 
     # Update chore (mark as completed)
     update_response=$(call_api POST /update_chore '{"horse_id":"'$horse_id'","chore_id":"'$chore_id'","completed":true}')
-    if [[ $update_response != *"\"success\":true"* ]]; then
+    if [[ $(echo $update_response | jq -r '.success') != "true" ]]; then
         echo "Failed to update chore. Response: $update_response"
         exit 1
     fi
-    echo "Updated chore"
+    echo "Updated chore successfully"
 
     # Get logs
     logs_response=$(call_api GET /get_logs)
