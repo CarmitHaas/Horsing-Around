@@ -75,52 +75,53 @@ pipeline {
             }
         }
         stage('Tag') {
-    when {
-        branch 'main'
-    }
-    steps {
-        script {
-            sshagent(['github']) {
-                sh 'git fetch --tags'
+            when {
+                branch 'main'
             }
-            def latestTag = sh(script: 'git describe --tags --abbrev=0 || echo 1.0.0', returnStdout: true).trim()
-            def (major, minor, patch) = latestTag.tokenize('.')
-            if (latestTag == '1.0.0' && !sh(script: 'git tag', returnStdout: true).trim()) {
-                RELEASE_TAG = '1.0.0'
+            steps {
+                script {
+                    sshagent(['github']) {
+                        sh 'git fetch --tags'
+                    }
+                    def latestTag = sh(script: 'git describe --tags --abbrev=0 || echo 1.0.0', returnStdout: true).trim()
+                    def (major, minor, patch) = latestTag.tokenize('.')
+                    if (latestTag == '1.0.0' && !sh(script: 'git tag', returnStdout: true).trim()) {
+                        RELEASE_TAG = '1.0.0'
             } else {
-                RELEASE_TAG = "${major}.${minor}.${(patch as int) + 1}"
+                        RELEASE_TAG = "${major}.${minor}.${(patch as int) + 1}"
+                    }
+                    echo "New version: ${RELEASE_TAG}"
+                }
             }
-            echo "New version: ${RELEASE_TAG}"
         }
-    }
-}
-stage('Publish') {
-    when {
-        branch 'main'
-    }
-    steps {
-        script {
-            withCredentials([usernamePassword(credentialsId: 'ecr-credentials', usernameVariable: 'ECR_USERNAME', passwordVariable: 'ECR_PASSWORD')]) {
-                sh """
+        stage('Publish') {
+            when {
+                branch 'main'
+            }
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'ecr-credentials', usernameVariable: 'ECR_USERNAME', passwordVariable: 'ECR_PASSWORD')]) {
+                        sh """
                     echo \${ECR_PASSWORD} | docker login -u \${ECR_USERNAME} --password-stdin ${ECR_REGISTRY}
                     docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${ECR_REGISTRY}/${ECR_REPOSITORY}:${RELEASE_TAG}
                     docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest
                     docker push ${ECR_REGISTRY}/${ECR_REPOSITORY}:${RELEASE_TAG}
                     docker push ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest
                 """
-            }
-            
-            sshagent(['github']) {
-                sh """
+                    }
+
+                    sshagent(['github']) {
+                        sh """
                     git config user.email "jenkins@jenkins.com"
                     git config user.name "Jenkins"
                     git tag -a ${RELEASE_TAG} -m "Release ${RELEASE_TAG}"
                     git push origin ${RELEASE_TAG}
                 """
+                    }
+                }
             }
         }
     }
-}
     //     stage('Deploy') {
     //         when {
     //             branch 'main'
