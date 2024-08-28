@@ -14,8 +14,6 @@ pipeline {
         ECR_REPOSITORY = 'carmit-portfolio'
         IMAGE_NAME = 'horsing-around'
         AWS_DEFAULT_REGION = 'us-east-1'
-        E2E_USERNAME = 'admin'
-        E2E_PASSWORD = credentials('e2e-password')
     }
 
     stages {
@@ -67,7 +65,7 @@ pipeline {
                     sh """
                     docker-compose -f docker-compose.ci.yml up -d
                     chmod +x e2e.sh
-                    bash ./e2e.sh ${SERVER_IP} ${E2E_USERNAME} ${E2E_PASSWORD}
+                    bash ./e2e.sh ${SERVER_IP} 
                     docker-compose -f docker-compose.ci.yml down
                     """
                 }

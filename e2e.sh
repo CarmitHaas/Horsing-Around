@@ -3,8 +3,6 @@
 set -e
 
 Public_IP=$1
-USERNAME=$2
-PASSWORD=$3
 
 echo "Waiting for 30 seconds to allow the server to start..."
 sleep 30
@@ -33,7 +31,7 @@ if [ "$(curl -s -o /dev/null -w "%{http_code}" http://${Public_IP}:80)" == "200"
     echo "Web server is up!"
 
     # Login
-    login_response=$(curl -s -X POST -c cookies.txt -b cookies.txt -H "Content-Type: application/x-www-form-urlencoded" -d "username=${USERNAME}&password=${PASSWORD}" http://${Public_IP}:80/login)
+    login_response=$(curl -s -X POST -c cookies.txt -b cookies.txt -H "Content-Type: application/x-www-form-urlencoded" -d "username='test'&password='test'" http://${Public_IP}:80/login)
     if [[ $login_response == *"Invalid username or password"* ]]; then
         echo "Login failed. Exiting."
         exit 1
