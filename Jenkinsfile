@@ -121,34 +121,27 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
-            when {
-                branch 'main'
-            }
-            steps {
-                script {
-                    stage('Update GitOps Repository') {
-                        steps {
-                            withCredentials([usernamePassword(credentialsId: 'ecr-credentials', usernameVariable: 'ECR_USERNAME', passwordVariable: 'ECR_PASSWORD')]) {
-                                sshagent(['github']) {
-                                    sh """
-                                    git clone git@github.com:CarmitHaas/gitops-HA.git
-                                    cd gitops-HA
-                                    sed -i 's|image: .*|image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${RELEASE_TAG}|' horsing-around-umbrella/values.yaml
-                                    git config user.email "jenkins@jenkins.com"
-                                    git config user.name "Jenkins"
-                                    git add .
-                                    git commit -m "Update image to ${RELEASE_TAG}"
-                                    git push origin main
-                                    """
-                                }
-                            }
-                        }
-                    }
-                }
+stage('Deploy') {
+    when {
+        branch 'main'
+    }
+    steps {
+        withCredentials([usernamePassword(credentialsId: 'ecr-credentials', usernameVariable: 'ECR_USERNAME', passwordVariable: 'ECR_PASSWORD')]) {
+            sshagent(['github']) {
+                sh """
+                git clone git@github.com:CarmitHaas/gitops-HA.git
+                cd gitops-HA
+                sed -i 's|image: .*|image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${RELEASE_TAG}|' horsing-around-umbrella/values.yaml
+                git config user.email "jenkins@jenkins.com"
+                git config user.name "Jenkins"
+                git add .
+                git commit -m "Update image to ${RELEASE_TAG}"
+                git push origin main
+                """
             }
         }
     }
+}
 
     post {
         always {
