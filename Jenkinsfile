@@ -130,8 +130,7 @@ pipeline {
                         sh """
                         git clone git@github.com:CarmitHaas/gitops-HA.git
                         cd gitops-HA
-                        envsubst < horsing-around-umbrella/values.yaml > values_output.yaml
-                        mv values_output.yaml horsing-around-umbrella/values.yaml
+                        sed -i 's/appVersion: *"*[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+"*/appVersion: "${RELEASE_TAG}"/' horsing-around-umbrella/charts/horsing-around/Chart.yaml
                         git config user.email "jenkins@jenkins.com"
                         git config user.name "Jenkins"
                         git add .
