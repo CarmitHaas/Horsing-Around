@@ -14,10 +14,8 @@ pipeline {
         ECR_REPOSITORY = 'carmit-portfolio'
         IMAGE_NAME = 'horsing-around'
         AWS_DEFAULT_REGION = 'us-east-1'
-        // E2E_USERNAME = credentials('e2e-username')
-        // E2E_PASSWORD = credentials('e2e-password')
         E2E_USERNAME = 'admin'
-        E2E_PASSWORD = 'admin'
+        E2E_PASSWORD = credentials('e2e-password')
     }
 
     stages {
@@ -35,6 +33,7 @@ pipeline {
                 }
             }
         }
+
 
     //    stage('Unit Test') {
     //         steps {
@@ -74,6 +73,7 @@ pipeline {
                 }
             }
         }
+
         stage('Tag') {
             when {
                 branch 'main'
@@ -87,13 +87,14 @@ pipeline {
                     def (major, minor, patch) = latestTag.tokenize('.')
                     if (latestTag == '1.0.0' && !sh(script: 'git tag', returnStdout: true).trim()) {
                         RELEASE_TAG = '1.0.0'
-            } else {
+                    } else {
                         RELEASE_TAG = "${major}.${minor}.${(patch as int) + 1}"
                     }
                     echo "New version: ${RELEASE_TAG}"
                 }
             }
         }
+
         stage('Publish') {
             when {
                 branch 'main'
@@ -102,46 +103,54 @@ pipeline {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'ecr-credentials', usernameVariable: 'ECR_USERNAME', passwordVariable: 'ECR_PASSWORD')]) {
                         sh """
-                    echo \${ECR_PASSWORD} | docker login -u \${ECR_USERNAME} --password-stdin ${ECR_REGISTRY}
-                    docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${ECR_REGISTRY}/${ECR_REPOSITORY}:${RELEASE_TAG}
-                    docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest
-                    docker push ${ECR_REGISTRY}/${ECR_REPOSITORY}:${RELEASE_TAG}
-                    docker push ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest
-                """
+                        echo \${ECR_PASSWORD} | docker login -u \${ECR_USERNAME} --password-stdin ${ECR_REGISTRY}
+                        docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${ECR_REGISTRY}/${ECR_REPOSITORY}:${RELEASE_TAG}
+                        docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest
+                        docker push ${ECR_REGISTRY}/${ECR_REPOSITORY}:${RELEASE_TAG}
+                        docker push ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest
+                        """
                     }
 
                     sshagent(['github']) {
                         sh """
-                    git config user.email "jenkins@jenkins.com"
-                    git config user.name "Jenkins"
-                    git tag -a ${RELEASE_TAG} -m "Release ${RELEASE_TAG}"
-                    git push origin ${RELEASE_TAG}
-                """
+                        git config user.email "jenkins@jenkins.com"
+                        git config user.name "Jenkins"
+                        git tag -a ${RELEASE_TAG} -m "Release ${RELEASE_TAG}"
+                        git push origin ${RELEASE_TAG}
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Deploy') {
+            when {
+                branch 'main'
+            }
+            steps {
+                script {
+                    stage('Update GitOps Repository') {
+                        steps {
+                            withCredentials([usernamePassword(credentialsId: 'ecr-credentials', usernameVariable: 'ECR_USERNAME', passwordVariable: 'ECR_PASSWORD')]) {
+                                sshagent(['github']) {
+                                    sh """
+                                    git clone https://github.com/CarmitHaas/gitops-HA.git
+                                    cd gitops-HA
+                                    sed -i 's|image: .*|image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${RELEASE_TAG}|' horsing-around-umbrella/values.yaml
+                                    git config user.email "jenkins@jenkins.com"
+                                    git config user.name "Jenkins"
+                                    git add .
+                                    git commit -m "Update image to ${RELEASE_TAG}"
+                                    git push origin main
+                                    """
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
     }
-    //     stage('Deploy') {
-    //         when {
-    //             branch 'main'
-    //         }
-    //         steps {
-    //             sshagent(['github']) {
-    //                 sh """
-    //                 git clone https://github.com/CarmitHaas/HorsingAround-gitops.git
-    //                 cd HorsingAround-gitops
-    //                 sed -i 's|image: .*|image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${RELEASE_TAG}|' deployment.yaml
-    //                 git config user.email "jenkins@jenkins.com"
-    //                 git config user.name "Jenkins"
-    //                 git add deployment.yaml
-    //                 git commit -m "Update image to ${RELEASE_TAG}"
-    //                 git push origin main
-    //                 """
-    //             }
-    //         }
-    //     }
-    // }
 
     post {
         always {
