@@ -132,7 +132,7 @@ pipeline {
                             withCredentials([usernamePassword(credentialsId: 'ecr-credentials', usernameVariable: 'ECR_USERNAME', passwordVariable: 'ECR_PASSWORD')]) {
                                 sshagent(['github']) {
                                     sh """
-                                    git clone https://github.com/CarmitHaas/gitops-HA.git
+                                    git clone git@github.com:CarmitHaas/gitops-HA.git
                                     cd gitops-HA
                                     sed -i 's|image: .*|image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${RELEASE_TAG}|' horsing-around-umbrella/values.yaml
                                     git config user.email "jenkins@jenkins.com"
