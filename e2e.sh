@@ -31,7 +31,7 @@ if [ "$(curl -s -o /dev/null -w "%{http_code}" http://${Public_IP}:80)" == "200"
     echo "Web server is up!"
 
     # Login
-    login_response=$(curl -s -X POST -c cookies.txt -b cookies.txt -H "Content-Type: application/x-www-form-urlencoded" -d "username='test'&password='test'" http://${Public_IP}:80/login)
+    login_response=$(curl -s -X POST -c cookies.txt -b cookies.txt -H "Content-Type: application/x-www-form-urlencoded" -d "username='admin'&password='admin'" http://${Public_IP}:80/login)
     if [[ $login_response == *"Invalid username or password"* ]]; then
         echo "Login failed. Exiting."
         exit 1
