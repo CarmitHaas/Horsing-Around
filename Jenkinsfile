@@ -128,13 +128,15 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'ecr-credentials', usernameVariable: 'ECR_USERNAME', passwordVariable: 'ECR_PASSWORD')]) {
                     sshagent(['github']) {
                         sh """
+                set -ex
                 git clone git@github.com:CarmitHaas/gitops-HA.git
                 cd gitops-HA
-                sed -i 's|image: .*|image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${RELEASE_TAG}|' horsing-around-umbrella/values.yaml
+                sed -i '/deployment:/,/image:/{s|repository: .*|repository: ${ECR_REGISTRY}/${ECR_REPOSITORY}|;s|tag: .*|tag: ${RELEASE_TAG}|}' horsing-around-umbrella/values.yaml
                 git config user.email "jenkins@jenkins.com"
                 git config user.name "Jenkins"
                 git add .
-                git commit -m "Update image to ${RELEASE_TAG}"
+                git diff --cached
+                git commit -m "Update image to ${RELEASE_TAG}" || true
                 git push origin main
                 """
                     }
