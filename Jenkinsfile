@@ -32,7 +32,6 @@ pipeline {
             }
         }
 
-
     //    stage('Unit Test') {
     //         steps {
     //             script {
@@ -65,7 +64,7 @@ pipeline {
                     sh """
                     docker-compose -f docker-compose.ci.yml up -d
                     chmod +x e2e.sh
-                    bash ./e2e.sh ${SERVER_IP} 
+                    bash ./e2e.sh ${SERVER_IP}
                     docker-compose -f docker-compose.ci.yml down
                     """
                 }
@@ -121,14 +120,14 @@ pipeline {
             }
         }
 
-stage('Deploy') {
-    when {
-        branch 'main'
-    }
-    steps {
-        withCredentials([usernamePassword(credentialsId: 'ecr-credentials', usernameVariable: 'ECR_USERNAME', passwordVariable: 'ECR_PASSWORD')]) {
-            sshagent(['github']) {
-                sh """
+        stage('Deploy') {
+            when {
+                branch 'main'
+            }
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'ecr-credentials', usernameVariable: 'ECR_USERNAME', passwordVariable: 'ECR_PASSWORD')]) {
+                    sshagent(['github']) {
+                        sh """
                 git clone git@github.com:CarmitHaas/gitops-HA.git
                 cd gitops-HA
                 sed -i 's|image: .*|image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${RELEASE_TAG}|' horsing-around-umbrella/values.yaml
@@ -138,10 +137,11 @@ stage('Deploy') {
                 git commit -m "Update image to ${RELEASE_TAG}"
                 git push origin main
                 """
+                    }
+                }
             }
         }
     }
-}
 
     post {
         always {
