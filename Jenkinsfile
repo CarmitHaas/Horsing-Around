@@ -16,11 +16,16 @@ pipeline {
     }
 
     stages {
-        stage('Clone') {
+        stage('Checkout SCM') {
             steps {
-                checkout scm
+                script {
+                    sh '''
+                    git clone git@github.com:CarmitHaas/Horsing-Around.git .
+                    git checkout main
+                    '''
+                }
             }
-        }
+}
 
     //    stage('Unit Test') {
     //         steps {
