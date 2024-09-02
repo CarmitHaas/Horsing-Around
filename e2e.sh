@@ -2,7 +2,6 @@
 
 set -e
 
-Public_IP=$1
 
 echo "Waiting for 30 seconds to allow the server to start..."
 sleep 30
@@ -12,7 +11,7 @@ call_api() {
     method=$1
     endpoint=$2
     data=$3
-    curl -s -X $method -H "Content-Type: application/json" -d "$data" -c cookies.txt -b cookies.txt http://${Public_IP}:80$endpoint
+    curl -s -X $method -H "Content-Type: application/json" -d "$data" -c cookies.txt -b cookies.txt http://localhost:80$endpoint
 }
 
 # Function to check if jq is installed
@@ -27,11 +26,11 @@ check_jq() {
 check_jq
 
 # Check if server is up
-if [ "$(curl -s -o /dev/null -w "%{http_code}" http://${Public_IP}:80)" == "200" ]; then
+if [ "$(curl -s -o /dev/null -w "%{http_code}" http://localhost:80)" == "200" ]; then
     echo "Web server is up!"
 
     # Login
-    login_response=$(curl -s -X POST -c cookies.txt -b cookies.txt -H "Content-Type: application/x-www-form-urlencoded" -d "username=admin&password=admin" http://${Public_IP}:80/login)
+    login_response=$(curl -s -X POST -c cookies.txt -b cookies.txt -H "Content-Type: application/x-www-form-urlencoded" -d "username=admin&password=admin" http://localhost:80/login)
     if [[ $login_response == *"Invalid username or password"* ]]; then
         echo "Login failed. Exiting."
         exit 1

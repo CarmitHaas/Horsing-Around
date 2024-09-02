@@ -1,5 +1,4 @@
 def RELEASE_TAG
-def SERVER_IP
 
 pipeline {
     agent any
@@ -20,15 +19,6 @@ pipeline {
         stage('Clone') {
             steps {
                 checkout scm
-            }
-        }
-
-        stage('Set Server IP') {
-            steps {
-                script {
-                    SERVER_IP = sh(script: 'curl -s http://checkip.amazonaws.com', returnStdout: true).trim()
-                    echo "Server IP is ${SERVER_IP}"
-                }
             }
         }
 
@@ -61,12 +51,12 @@ pipeline {
         stage('End-to-end Test') {
             steps {
                 script {
-                    sh """
+                    sh '''
                     docker-compose -f docker-compose.ci.yml up -d
                     chmod +x e2e.sh
-                    bash ./e2e.sh ${SERVER_IP}
+                    bash ./e2e.sh
                     docker-compose -f docker-compose.ci.yml down
-                    """
+                    '''
                 }
             }
         }
