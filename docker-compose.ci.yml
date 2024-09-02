@@ -10,14 +10,15 @@ services:
     depends_on:
       - mongo
     networks:
-      - app-network
+      - db-network
+      - frontend-network
 
   mongo:
     image: mongo:latest
     volumes:
       - mongodb_data:/data/db
     networks:
-      - app-network
+      - db-network
 
   nginx:
     build:
@@ -28,11 +29,13 @@ services:
     depends_on:
       - web
     networks:
-      - app-network
+      - frontend-network
 
 volumes:
   mongodb_data:
 
 networks:
-  app-network:
+  db-network:
+    driver: bridge
+  frontend-network:
     driver: bridge

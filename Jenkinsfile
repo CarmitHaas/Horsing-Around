@@ -48,19 +48,19 @@ pipeline {
             }
         }
 
+    
         stage('End-to-end Test') {
             steps {
                 script {
                     sh '''
                     docker-compose -f docker-compose.ci.yml up -d
                     chmod +x e2e.sh
-                    bash ./e2e.sh
+                    ./e2e.sh
                     docker-compose -f docker-compose.ci.yml down
                     '''
                 }
             }
         }
-
         stage('Tag') {
             when {
                 branch 'main'
