@@ -25,7 +25,7 @@ pipeline {
     //    stage('Unit Test') {
     //         steps {
     //             script {
-    //             sh '''
+    //             sh """
     //                 python3 -m venv venv
     //                 . venv/bin/activate
     //                 pip install -r requirements.txt
@@ -33,7 +33,7 @@ pipeline {
     //                 export PYTHONPATH=$PYTHONPATH:$(pwd)
     //                 pytest tests/ -v
     //                 deactivate
-    //                     '''
+    //                     """
     //             }
     //         }
     //     }
