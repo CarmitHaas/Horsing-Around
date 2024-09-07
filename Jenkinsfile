@@ -52,10 +52,10 @@ pipeline {
         stage('End-to-end Test') {
             steps {
                 script {
-                    sh '''
-                    docker-compose -f docker-compose.ci.yml up -d 
-                    docker-compose -f docker-compose.ci.yml run --rm e2e
-                    docker-compose -f docker-compose.ci.yml down -v
+                    sh "docker-compose -f docker-compose.ci.yml build"
+                    sh "docker-compose -f docker-compose.ci.yml up -d"
+                    sh "docker-compose -f docker-compose.ci.yml run --rm e2e"
+                    sh "docker-compose -f docker-compose.ci.yml down -v"
                     '''
                 }
             }
