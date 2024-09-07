@@ -9,9 +9,22 @@ call_api() {
     method=$1
     endpoint=$2
     data=$3
-    curl -s -X $method -H "Content-Type: application/json" -d "$data" -c cookies.txt -b cookies.txt http://localhost:80$endpoint
+    curl -s -X $method -H "Content-Type: application/json" -d "$data" -c cookies.txt -b cookies.txt http://nginx:80$endpoint
 }
 
+wait_for_service() {
+    echo "Waiting for service to be ready..."
+    for i in {1..30}; do
+        if curl -s http://nginx:80 > /dev/null; then
+            echo "Service is ready!"
+            return 0
+        fi
+        echo "Waiting for service to be ready... attempt $i"
+        sleep 2
+    done
+    echo "Service did not become ready in time."
+    return 1
+}
 # Function to check if jq is installed
 check_jq() {
     if ! command -v jq &> /dev/null; then
@@ -22,13 +35,14 @@ check_jq() {
 
 # Check if jq is installed
 check_jq
+wait_for_service
 
 # Check if server is up
-if [ "$(curl -s -o /dev/null -w "%{http_code}" http://localhost:80)" == "200" ]; then
+if [ "$(curl -s -o /dev/null -w "%{http_code}" http://nginx:80)" == "200" ]; then
     echo "Web server is up!"
 
     # Login
-    login_response=$(curl -s -X POST -c cookies.txt -b cookies.txt -H "Content-Type: application/x-www-form-urlencoded" -d "username=admin&password=admin" http://localhost:80/login)
+    login_response=$(curl -s -X POST -c cookies.txt -b cookies.txt -H "Content-Type: application/x-www-form-urlencoded" -d "username=admin&password=admin" http://nginx:80/login)
     if [[ $login_response == "Invalid username or password" ]]; then
         echo "Login failed. Exiting."
         exit 1
