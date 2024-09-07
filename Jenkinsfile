@@ -51,19 +51,16 @@ pipeline {
         stage('End-to-end Test') {
             steps {
                 script {
-                     try {
-                        sh "docker-compose -f docker-compose.ci.yml build"
-                        sh "docker-compose -f docker-compose.ci.yml up -d"
-                        sh "docker-compose -f docker-compose.ci.yml run --rm e2e"
-                    } catch (Exception e) {
-                        currentBuild.result = 'FAILURE'
-                        error "E2E tests failed: ${e.message}"
-                    } finally {
-                        sh "docker-compose -f docker-compose.ci.yml down -v"
-                    }
+                    sh '''
+                    docker-compose -f docker-compose.yml up -d
+                    chmod +x e2e.sh
+                    ./e2e.sh
+                    docker-compose -f docker-compose.yml down
+                    '''
                 }
             }
         }
+
         stage('Tag') {
             when {
                 branch 'main'

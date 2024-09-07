@@ -31,21 +31,6 @@ services:
     networks:
       - frontend-network
 
-  e2e:
-    image: alpine:latest
-    volumes:
-      - ./e2e.sh:/e2e.sh
-    command: >
-      sh -c "
-        apk add --no-cache curl jq &&
-        chmod +x /e2e.sh &&
-        /e2e.sh
-      "
-    depends_on:
-      - nginx
-    networks:
-      - frontend-network
-
 volumes:
   mongodb_data:
 
