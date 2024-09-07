@@ -30,6 +30,7 @@ services:
       - web
     networks:
       - frontend-network
+      - shared-network
 
 volumes:
   mongodb_data:
@@ -38,4 +39,6 @@ networks:
   db-network:
     driver: bridge
   frontend-network:
+    driver: bridge
+  shared-network:
     driver: bridge
