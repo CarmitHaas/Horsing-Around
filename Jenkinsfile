@@ -53,10 +53,9 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    docker-compose -f docker-compose.ci.yml up -d
-                    chmod +x e2e.sh
-                    ./e2e.sh
-                    docker-compose -f docker-compose.ci.yml down
+                    docker-compose -f docker-compose.ci.yml up -d 
+                    docker-compose -f docker-compose.ci.yml run --rm e2e
+                    docker-compose -f docker-compose.ci.yml down -v
                     '''
                 }
             }
