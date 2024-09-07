@@ -17,13 +17,8 @@ pipeline {
 
     stages {
         stage('Checkout SCM') {
-            steps {
-                script {
-                    sh '''
-                    git clone git@github.com:CarmitHaas/Horsing-Around.git .
-                    git checkout main
-                    '''
-                }
+               steps {
+                checkout scm
             }
 }
 
