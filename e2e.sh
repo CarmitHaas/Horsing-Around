@@ -2,29 +2,18 @@
 
 set -e
 
-echo "Starting E2E tests..."
+
+echo "Waiting for 30 seconds to allow the server to start..."
+sleep 30
 
 # Function to make API calls
 call_api() {
     method=$1
     endpoint=$2
     data=$3
-    curl -s -X $method -H "Content-Type: application/json" -d "$data" -c cookies.txt -b cookies.txt http://nginx:80$endpoint
+    curl -s -X $method -H "Content-Type: application/json" -d "$data" -c cookies.txt -b cookies.txt http://localhost:80$endpoint
 }
 
-wait_for_service() {
-    echo "Waiting for service to be ready..."
-    for i in {1..30}; do
-        if curl -s http://nginx:80 > /dev/null; then
-            echo "Service is ready!"
-            return 0
-        fi
-        echo "Waiting for service to be ready... attempt $i"
-        sleep 2
-    done
-    echo "Service did not become ready in time."
-    return 1
-}
 # Function to check if jq is installed
 check_jq() {
     if ! command -v jq &> /dev/null; then
@@ -35,14 +24,13 @@ check_jq() {
 
 # Check if jq is installed
 check_jq
-wait_for_service
 
 # Check if server is up
-if [ "$(curl -s -o /dev/null -w "%{http_code}" http://nginx:80)" == "200" ]; then
+if [ "$(curl -s -o /dev/null -w "%{http_code}" http://localhost:80)" == "200" ]; then
     echo "Web server is up!"
 
     # Login
-    login_response=$(curl -s -X POST -c cookies.txt -b cookies.txt -H "Content-Type: application/x-www-form-urlencoded" -d "username=admin&password=admin" http://nginx:80/login)
+    login_response=$(curl -s -X POST -c cookies.txt -b cookies.txt -H "Content-Type: application/x-www-form-urlencoded" -d "username=admin&password=admin" http://localhost:80/login)
     if [[ $login_response == "Invalid username or password" ]]; then
         echo "Login failed. Exiting."
         exit 1
@@ -58,7 +46,51 @@ if [ "$(curl -s -o /dev/null -w "%{http_code}" http://nginx:80)" == "200" ]; the
     fi
     echo "Created horse with ID: $horse_id"
 
-    # Rest of your E2E test logic...
+    # Get the horse
+    get_response=$(call_api GET /get_horse/$horse_id)
+    if [[ $get_response == "Horse not found" ]]; then
+        echo "Failed to retrieve horse. Response: $get_response"
+        exit 1
+    fi
+    echo "Retrieved horse: $get_response"
+
+    # Add a chore
+    chore_response=$(call_api POST /add_chore '{"name":"TestChore","category":"day_opening","assign_all":false,"horse_ids":["'$horse_id'"]}')
+    chore_id=$(echo $chore_response | jq -r '.id')
+    if [ -z "$chore_id" ] || [ "$chore_id" == "null" ]; then
+        echo "Failed to add chore. Response: $chore_response"
+        exit 1
+    fi
+    echo "Added chore: $chore_response"
+
+    # Update chore (mark as completed)
+    update_response=$(call_api POST /update_chore '{"horse_id":"'$horse_id'","chore_id":"'$chore_id'","completed":true}')
+    if [[ $(echo $update_response | jq -r '.success') != "true" ]]; then
+        echo "Failed to update chore. Response: $update_response"
+        exit 1
+    fi
+    echo "Updated chore successfully"
+
+    # Get logs
+    logs_response=$(call_api GET /get_logs)
+    echo "Logs: $logs_response"
+
+    # Remove the horse
+    remove_response=$(call_api POST /remove_horse '{"horse_id":"'$horse_id'"}')
+    if [[ $remove_response != "Horse deleted successfully" ]]; then
+        echo "Failed to remove horse. Response: $remove_response"
+        exit 1
+    fi
+    echo "Removed horse"
+
+    # Verify removal
+    get_response=$(call_api GET /get_horse/$horse_id)
+    if [[ $get_response == "Horse not found" ]]; then
+        echo "Horse successfully removed"
+    else
+        echo "Error: Horse not properly removed. Response: $get_response"
+        exit 1
+    fi
 
     echo "All tests passed successfully!"
 else
