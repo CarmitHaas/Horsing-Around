@@ -19,8 +19,8 @@ pipeline {
         stage('Checkout SCM') {
                steps {
                 checkout scm
-            }
-}
+               }
+        }
 
     //    stage('Unit Test') {
     //         steps {
@@ -48,7 +48,6 @@ pipeline {
             }
         }
 
-    
         stage('End-to-end Test') {
             steps {
                 script {
@@ -56,7 +55,6 @@ pipeline {
                     sh "docker-compose -f docker-compose.ci.yml up -d"
                     sh "docker-compose -f docker-compose.ci.yml run --rm e2e"
                     sh "docker-compose -f docker-compose.ci.yml down -v"
-                    '''
                 }
             }
         }
