@@ -73,7 +73,7 @@ pipeline {
             }
             steps {
                 script {
-                    sshagent(['github']) {
+                    sshagent(['jenkhub']) {
                         sh 'git fetch --tags'
                     }
                     def latestTag = sh(script: 'git describe --tags --abbrev=0 || echo 1.0.0', returnStdout: true).trim()
@@ -104,7 +104,7 @@ pipeline {
                         """
                     }
 
-                    sshagent(['github']) {
+                    sshagent(['jenkhub']) {
                         sh """
                         git config user.email "jenkins@jenkins.com"
                         git config user.name "Jenkins"
@@ -122,7 +122,7 @@ pipeline {
             }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'ecr-credentials', usernameVariable: 'ECR_USERNAME', passwordVariable: 'ECR_PASSWORD')]) {
-                    sshagent(['github']) {
+                    sshagent(['jenkhub']) {
                         sh """
                         git clone git@github.com:CarmitHaas/gitops-HA.git
                         cd gitops-HA
