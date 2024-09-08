@@ -30,7 +30,7 @@ if [ "$(curl -s -o /dev/null -w "%{http_code}" http://nginx:80)" == "200" ]; the
     echo "Web server is up!"
 
     # Login
-    login_response=$(curl -s -X POST -c cookies.txt -b cookies.txt -H "Content-Type: application/x-www-form-urlencoded" -d "username=admin&password=admin" http://nginx:80/login)
+    login_response=$(curl -s -X POST -c cookies.txt -b cookies.txt -H "Content-Type: application/x-www-form-urlencoded" -d "username=$E2E_USERNAME&password=$E2E_PASSWORD" http://nginx:80/login)
     if [[ $login_response == "Invalid username or password" ]]; then
         echo "Login failed. Exiting."
         exit 1
@@ -77,7 +77,8 @@ if [ "$(curl -s -o /dev/null -w "%{http_code}" http://nginx:80)" == "200" ]; the
 
     # Remove the horse
     remove_response=$(call_api POST /remove_horse '{"horse_id":"'$horse_id'"}')
-    if [[ $remove_response != "Horse deleted successfully" ]]; then
+    remove_message=$(echo $remove_response | jq -r '.message')
+    if [[ $remove_message != "Horse deleted successfully" ]]; then
         echo "Failed to remove horse. Response: $remove_response"
         exit 1
     fi

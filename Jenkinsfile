@@ -13,6 +13,7 @@ pipeline {
         ECR_REPOSITORY = 'carmit-portfolio'
         IMAGE_NAME = 'horsing-around'
         AWS_DEFAULT_REGION = 'us-east-1'
+        E2E_CREDENTIALS = credentials('e2e-credentials')
     }
 
     stages {
@@ -56,9 +57,12 @@ pipeline {
                     docker-compose -f docker-compose.ci.yml up -d
                     docker network connect shared-network \$(hostname) || true
                     chmod +x e2e.sh
-                    ./e2e.sh
-                    docker-compose -f docker-compose.ci.yml down
                     '''
+                    withEnv(["E2E_USERNAME=${E2E_CREDENTIALS_USR}", 
+                                 "E2E_PASSWORD=${E2E_CREDENTIALS_PSW}"]) {
+                            sh './e2e.sh'
+                        }
+                    sh 'docker-compose -f docker-compose.ci.yml down'
                 }
             }
         }
