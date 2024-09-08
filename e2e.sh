@@ -72,18 +72,17 @@ if [ "$(curl -s -o /dev/null -w "%{http_code}" http://nginx:80)" == "200" ]; the
     fi
     echo "Updated chore successfully"
 
-    # Get logs
+# Get logs
     logs_response=$(call_api GET /get_logs)
     echo "Logs: $logs_response"
 
-    # Remove the horse
+  # Remove the horse
     remove_response=$(call_api POST /remove_horse '{"horse_id":"'$horse_id'"}')
     if [[ $remove_response != "Horse deleted successfully" ]]; then
         echo "Failed to remove horse. Response: $remove_response"
         exit 1
     fi
     echo "Removed horse"
-
     # Verify removal
     get_response=$(call_api GET /get_horse/$horse_id)
     if [[ $get_response == "Horse not found" ]]; then
@@ -92,7 +91,6 @@ if [ "$(curl -s -o /dev/null -w "%{http_code}" http://nginx:80)" == "200" ]; the
         echo "Error: Horse not properly removed. Response: $get_response"
         exit 1
     fi
-
     echo "All tests passed successfully!"
 else
     echo "Web server is down or not responding correctly."
