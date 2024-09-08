@@ -78,14 +78,14 @@ if [ "$(curl -s -o /dev/null -w "%{http_code}" http://nginx:80)" == "200" ]; the
 
   # Remove the horse
     remove_response=$(call_api POST /remove_horse '{"horse_id":"'$horse_id'"}')
-    if [[ $remove_response != "Horse deleted successfully" ]]; then
+    if [[ $remove_response != *"Horse deleted successfully"* ]]; then
         echo "Failed to remove horse. Response: $remove_response"
         exit 1
     fi
     echo "Removed horse"
     # Verify removal
     get_response=$(call_api GET /get_horse/$horse_id)
-    if [[ $get_response == "Horse not found" ]]; then
+    if [[ $get_response == *"Horse not found"* ]]; then
         echo "Horse successfully removed"
     else
         echo "Error: Horse not properly removed. Response: $get_response"
