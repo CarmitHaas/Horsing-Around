@@ -52,7 +52,9 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    docker-compose -f docker-compose.ci.yml up --build -d
+                    docker network create shared-network || true
+                    docker-compose -f docker-compose.ci.yml up -d
+                    docker network connect shared-network jenkins || true
                     chmod +x e2e.sh
                     ./e2e.sh
                     docker-compose -f docker-compose.ci.yml down
