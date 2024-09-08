@@ -2,6 +2,7 @@
 
 set -e
 
+Public_IP=$1
 
 echo "Waiting for 30 seconds to allow the server to start..."
 sleep 30
