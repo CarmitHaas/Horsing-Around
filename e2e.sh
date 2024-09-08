@@ -77,8 +77,7 @@ if [ "$(curl -s -o /dev/null -w "%{http_code}" http://nginx:80)" == "200" ]; the
 
     # Remove the horse
     remove_response=$(call_api POST /remove_horse '{"horse_id":"'$horse_id'"}')
-    remove_message=$(echo $remove_response | jq -r '.message')
-    if [[ $remove_message != "Horse deleted successfully" ]]; then
+    if [[ $remove_response != "Horse deleted successfully" ]]; then
         echo "Failed to remove horse. Response: $remove_response"
         exit 1
     fi
