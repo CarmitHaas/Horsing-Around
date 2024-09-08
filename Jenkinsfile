@@ -54,7 +54,7 @@ pipeline {
                     sh '''
                     docker network create shared-network || true
                     docker-compose -f docker-compose.ci.yml up -d
-                    docker network connect shared-network jenkins || true
+                    docker network connect shared-network \$(hostname) || true
                     chmod +x e2e.sh
                     ./e2e.sh
                     docker-compose -f docker-compose.ci.yml down
