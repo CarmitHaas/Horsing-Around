@@ -11,7 +11,7 @@ from pymongo.errors import ServerSelectionTimeoutError
 from prometheus_client import generate_latest, REGISTRY, Counter, Histogram, Gauge
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'your_secret_key_here')
+app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24).hex())
 
 # Prometheus metrics
 REQUEST_COUNT = Counter('request_count', 'App Request Count', ['method', 'endpoint', 'http_status'])
@@ -193,6 +193,7 @@ def remove_chore():
     return jsonify({'success': True})
 
 @app.route('/update_chore', methods=['POST'])
+@login_required
 def update_chore():
     horse_id = request.json['horse_id']
     chore_id = request.json['chore_id']
@@ -339,12 +340,12 @@ def metrics():
 
 if __name__ == '__main__':
     # Create default admin user if not exists
-    if not users_collection.find_one({'username': 'admin'}):
+    admin_user = os.environ.get('ADMIN_USER', 'admin')
+    admin_pass = os.environ.get('ADMIN_PASSWORD', 'admin')
+    if not users_collection.find_one({'username': admin_user}):
         users_collection.insert_one({
-            'username': 'admin',
-            'password': generate_password_hash('admin')
+            'username': admin_user,
+            'password': generate_password_hash(admin_pass)
         })
-    app.run(host='0.0.0.0', debug=True)
-    
-    
-    
+    app.run(host='0.0.0.0', debug=os.environ.get('FLASK_DEBUG', 'false').lower() == 'true')
+

@@ -9,7 +9,7 @@ pipeline {
     }
 
     environment {
-        ECR_REGISTRY = '644435390668.dkr.ecr.us-east-1.amazonaws.com'
+        ECR_REGISTRY = credentials('ecr-registry-url')
         ECR_REPOSITORY = 'carmit-portfolio'
         IMAGE_NAME = 'horsing-around'
         AWS_DEFAULT_REGION = 'us-east-1'
@@ -23,21 +23,21 @@ pipeline {
                }
         }
 
-    //    stage('Unit Test') {
-    //         steps {
-    //             script {
-    //             sh """
-    //                 python3 -m venv venv
-    //                 . venv/bin/activate
-    //                 pip install -r requirements.txt
-    //                 pip install pytest
-    //                 export PYTHONPATH=$PYTHONPATH:$(pwd)
-    //                 pytest tests/ -v
-    //                 deactivate
-    //                     """
-    //             }
-    //         }
-    //     }
+        stage('Unit Test') {
+            steps {
+                script {
+                sh """
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install -r requirements.txt
+                    pip install pytest
+                    export PYTHONPATH=\$PYTHONPATH:\$(pwd)
+                    pytest tests/ -v
+                    deactivate
+                        """
+                }
+            }
+        }
 
         stage('Build Web App') {
             steps {
@@ -58,7 +58,7 @@ pipeline {
                     docker network connect shared-network \$(hostname) || true
                     chmod +x e2e.sh
                     '''
-                    withEnv(["E2E_USERNAME=${E2E_CREDENTIALS_USR}", 
+                    withEnv(["E2E_USERNAME=${E2E_CREDENTIALS_USR}",
                                  "E2E_PASSWORD=${E2E_CREDENTIALS_PSW}"]) {
                             sh './e2e.sh'
                         }
@@ -144,8 +144,7 @@ pipeline {
         always {
             sh '''
             docker-compose down -v || true
-            docker rmi ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest || true
-            docker system prune -af
+            docker rmi ${IMAGE_NAME}:${BUILD_NUMBER} || true
             '''
             cleanWs()
         }

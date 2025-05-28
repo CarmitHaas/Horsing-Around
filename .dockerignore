@@ -1,0 +1,9 @@
+.git
+.gitignore
+tests/
+*.md
+*.png
+.DS_Store
+.env
+venv/
+__pycache__/
